@@ -9,6 +9,6 @@ class LoginForm(Form):
     ])
 
     def validate_password(self, password):
-        reference_password = Config.read_config_file()['TREE']['Password']
+        reference_password = Config.get_pass()
         if self.password.data != reference_password:
             raise ValidationError("Incorrect")

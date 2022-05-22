@@ -10,10 +10,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET', 'POST'])
 def console():
-    config = Config()
-    # app.config.update(config)
-    config.write_config_file()
-    server_option = config.config_parser['TREE']['Sister']
+    server_option = Config.get_sister()
     login_form = LoginForm(request.form)
     email_form = EmailForm(request.form)
     if "submit-password" in request.form and not login_form.validate():

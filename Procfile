@@ -1,1 +1,1 @@
-web: flask run
+web: gunicorn --workers=2 app:app

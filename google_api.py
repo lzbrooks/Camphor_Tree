@@ -3,7 +3,6 @@ from email.mime.text import MIMEText
 
 import requests as requests
 
-from config import Config
 
 # If modifying these scopes, delete the file token.json.
 # SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -27,6 +26,7 @@ from config import Config
 # Set up or update a push notification watch on the given user mailbox.
 # POST
 # "/gmail/v1/users/{userId}/watch"
+from config import Config
 
 
 class GMailMessage:
@@ -35,19 +35,19 @@ class GMailMessage:
 
         # Google Client ID
         if google_client_id is None:
-            self.google_client_id = Config.read_config_file()['GOOGLE']['CLIENT_ID']
+            self.google_client_id = Config.get_google_id()
         else:
             self.google_client_id = google_client_id
 
         # Google Client Secret
         if google_client_secret is None:
-            self.google_client_secret = Config.read_config_file()['GOOGLE']['CLIENT_SECRET']
+            self.google_client_secret = Config.get_google_secret()
         else:
             self.google_client_secret = google_client_secret
 
         # Email Recipient
         if message_to is None:
-            self.message_to = Config.read_config_file()['TREE']['Email']
+            self.message_to = Config.get_email()
         else:
             self.message_to = message_to
 
