@@ -1,0 +1,52 @@
+body {
+  background-color: black;
+  background-image: radial-gradient(
+    rgba(0, 150, 0, 0.75), black 120%
+  );
+  height: 100vh;
+  color: white;
+  font: 1.3rem Inconsolata, monospace;
+  text-shadow: 0 0 5px #C8C8C8;
+}
+
+::selection {
+  background-color: white;
+  color: black;
+  text-shadow: none;
+}
+
+ul {
+    list-style: none;
+    padding-inline-start: 0;
+}
+
+input, textarea {
+    border-style: dashed;
+    border-width: 1px;
+    border-color: #4AF626;
+    background-color: black;
+    font: 1rem Inconsolata, monospace;
+    color: white;
+    text-shadow: 0 0 5px #C8C8C8;
+    width: 30em;
+}
+
+textarea {
+    height: 8.4em;
+}
+
+input[type=submit] {
+    width: 15em;
+}
+
+input[type=radio] {
+    width: 1em;
+}
+
+input:checked + label {
+    border-style: dashed;
+    border-width: 1px;
+    border-color: #4AF626;
+    background-color: black;
+    width: 15em;
+}

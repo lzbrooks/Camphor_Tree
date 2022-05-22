@@ -2,15 +2,16 @@
 <html>
   <head>
     {% block head %}
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <title>{% block title %}{% endblock %} - Camphor Tree</title>
+    <title>{{ server_option }}{% block title %}{% endblock %} - Camphor Tree</title>
     {% endblock %}
   </head>
   <body>
     <div id="content">{% block content %}{% endblock %}</div>
     <div id="footer">
       {% block footer %}
-      &copy; Copyright 2010 by <a href="http://domain.invalid/">you</a>.
+      {{ server_option }} Console
       {% endblock %}
     </div>
   </body>

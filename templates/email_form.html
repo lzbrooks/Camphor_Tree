@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block content %}
+{% from "_formhelpers.html" import render_field %}
+<form method=post>
+  <dl>
+    {{ render_field(form.email) }}
+    {{ render_field(form.info_level) }}
+    {{ render_field(form.message_body) }}
+    <dt>
+      <dd><input type=submit name="submit-email" value="Send Email">
+      </dd>
+    </dl>
+</form>
+{% endblock %}
+
+{% block footer %}
+{{ send_status }}
+{% endblock %}

@@ -1,12 +1,19 @@
-from wtforms import Form, BooleanField, StringField, PasswordField, validators
+from wtforms import Form, StringField, TextAreaField, validators, ValidationError, RadioField
+
+from config import Config
 
 
-class RegistrationForm(Form):
-    username = StringField('Username', [validators.Length(min=4, max=25)])
-    email = StringField('Email Address', [validators.Length(min=6, max=35)])
-    password = PasswordField('New Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords must match')
-    ])
-    confirm = PasswordField('Repeat Password')
-    accept_tos = BooleanField('I accept the TOS', [validators.DataRequired()])
+class EmailForm(Form):
+    email = StringField('Email Address', validators=[validators.Length(min=6, max=35),
+                                                     validators.InputRequired(),
+                                                     validators.Email()])
+    info_level = RadioField('Info Level', choices=Config.read_config_file().items('URGENCY'),
+                            validators=[validators.InputRequired()]
+                            )
+    message_body = TextAreaField('Message Body', validators=[validators.Length(min=4, max=270),
+                                                             validators.DataRequired()])
+
+    def validate_email(self, email):
+        email_whitelist = Config.read_config_file()['WHITELIST'].values()
+        if self.email.data not in email_whitelist:
+            raise ValidationError("Invalid")
