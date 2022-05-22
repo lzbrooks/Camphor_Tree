@@ -40,8 +40,5 @@ class Config:
 
     @staticmethod
     def get_info_levels():
-        return {
-            '1': 'Emergency',
-            '2': 'Urgent',
-            '3': 'Info'
-        }
+        info_levels = [('1', 'Emergency'), ('2', 'Urgent'), ('3', 'Info')]
+        return info_levels
