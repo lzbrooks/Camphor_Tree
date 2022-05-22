@@ -26,7 +26,7 @@ class Config:
     def get_whitelist():
         # CAMPHOR_TREE_WHITELIST='["Foo", "bar"]'
         if 'CAMPHOR_TREE_WHITELIST' in os.environ:
-            return json.loads(os.environ['CAMPHOR_TREE_WHITELIST'])
+            return os.environ['CAMPHOR_TREE_WHITELIST'].split(",")
 
     @staticmethod
     def get_google_secret():
