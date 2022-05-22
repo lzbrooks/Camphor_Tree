@@ -28,10 +28,8 @@ class Config:
             self.config_parser['TREE']['Password'] = 'satsuki'
 
         # Email
-        if email is None and 'CAMPHOR_TREE_EMAIL' in os.environ:
+        if 'CAMPHOR_TREE_EMAIL' in os.environ:
             self.config_parser['TREE']['Email'] = os.environ['CAMPHOR_TREE_EMAIL']
-        else:
-            self.config_parser['TREE']['Email'] = email
 
         # GOOGLE #
         # Google Client ID
