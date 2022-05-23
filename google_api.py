@@ -3,7 +3,6 @@ from email.mime.text import MIMEText
 
 import requests as requests
 
-
 # If modifying these scopes, delete the file token.json.
 # SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
@@ -45,6 +44,9 @@ class GMailMessage:
         else:
             self.google_client_secret = google_client_secret
 
+        # Google Refresh Token
+        self.refresh_token = Config.get_refresh_token()
+
         # Email Recipient
         if message_to is None:
             self.message_to = Config.get_email()
@@ -55,18 +57,21 @@ class GMailMessage:
         self.message_subject = message_subject
         self.message_text = message_text
 
-        self.auth_key = None
+        self.auth_token = None
         self.gmail_message = None
         self.gmail_endpoint = None
 
-    def get_key(self):
-        url = "https://www.googleapis.com/oauth2/v4/token"
+    def get_auth_token(self):
+        url = "https://oauth2.googleapis.com/token"
         data = {
-            'grant_type': 'client_credentials'
+            'client_id': self.google_client_id,
+            'client_secret': self.google_client_secret,
+            'refresh_token': self.refresh_token,
+            'grant_type': 'refresh_token'
         }
-        r = requests.post(url, json=data, auth=(self.google_client_id, self.google_client_secret))
+        r = requests.post(url, json=data)
         key = r.json()['access_token']
-        self.auth_key = key
+        self.auth_token = key
 
     def get_gmail_url(self):
         gmail_endpoint = "https://gmail.googleapis.com"
@@ -79,7 +84,6 @@ class GMailMessage:
         message['From'] = self.message_from
         message['Subject'] = self.message_subject
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-
         create_message = {
             'message': {
                 'raw': encoded_message
@@ -89,7 +93,7 @@ class GMailMessage:
 
     def post_message(self):
         headers = {
-            'Authorization': f'Bearer {self.auth_key} ',
+            'Authorization': f'Bearer {self.auth_token} ',
             'Accept': 'application / json',
             'Content-Type': 'application/json'
         }
@@ -97,7 +101,7 @@ class GMailMessage:
         return response
 
     def send_gmail_message(self):
-        self.get_key()
+        self.get_auth_token()
         self.get_gmail_url()
         self.gmail_create_message()
         return self.post_message()

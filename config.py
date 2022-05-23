@@ -42,3 +42,8 @@ class Config:
     def get_info_levels():
         info_levels = [('1', 'Emergency'), ('2', 'Urgent'), ('3', 'Info')]
         return info_levels
+
+    @staticmethod
+    def get_refresh_token():
+        if 'CAMPHOR_TREE_REFRESH_TOKEN' in os.environ:
+            return os.environ['CAMPHOR_TREE_REFRESH_TOKEN']
