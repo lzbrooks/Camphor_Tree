@@ -53,6 +53,8 @@ class GMailMessage:
         else:
             self.message_to = message_to
 
+        # TODO: cannot send "from" another email address
+        #  always will send from authenticated user email
         self.message_from = message_from
         self.message_subject = message_subject
         self.message_text = message_text
@@ -85,9 +87,7 @@ class GMailMessage:
         message['Subject'] = self.message_subject
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
         create_message = {
-            'message': {
-                'raw': encoded_message
-            }
+            'raw': encoded_message
         }
         self.gmail_message = create_message
 
