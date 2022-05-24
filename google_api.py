@@ -45,7 +45,10 @@ class GMailMessage:
             self.google_client_secret = google_client_secret
 
         # Google Refresh Token
-        self.refresh_token = Config.get_refresh_token()
+        self.refresh_token = Config.get_google_refresh_token()
+
+        # Google Pub/Sub Topic
+        self.google_topic = Config.get_google_topic()
 
         # Email Recipient
         if message_to is None:
@@ -53,15 +56,25 @@ class GMailMessage:
         else:
             self.message_to = message_to
 
-        # TODO: cannot send "from" another email address
-        #  always will send from authenticated user email
-        self.message_from = message_from
+        # Email Sender
+        if message_from is None:
+            self.message_from = Config.get_email()
+        else:
+            self.message_from = message_from
         self.message_subject = message_subject
         self.message_text = message_text
+
+        self.max_message_size = Config.get_max_message_size()
 
         self.auth_token = None
         self.gmail_message = None
         self.gmail_endpoint = None
+        self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
+        self.api_headers = {
+            'Authorization': f'Bearer {self.auth_token} ',
+            'Accept': 'application / json',
+            'Content-Type': 'application/json'
+        }
 
     def get_auth_token(self):
         url = "https://oauth2.googleapis.com/token"
@@ -92,12 +105,7 @@ class GMailMessage:
         self.gmail_message = create_message
 
     def post_message(self):
-        headers = {
-            'Authorization': f'Bearer {self.auth_token} ',
-            'Accept': 'application / json',
-            'Content-Type': 'application/json'
-        }
-        response = requests.post(self.gmail_endpoint, headers=headers, json=self.gmail_message)
+        response = requests.post(self.gmail_endpoint, headers=self.api_headers, json=self.gmail_message)
         return response
 
     def send_gmail_message(self):
@@ -105,3 +113,33 @@ class GMailMessage:
         self.get_gmail_url()
         self.gmail_create_message()
         return self.post_message()
+
+    # TODO: cron every day
+    def gmail_re_watch(self):
+        print("Starting GMail Re-Watch...")
+        self.get_auth_token()
+        request_body = {
+            'labelIds': ['INBOX'],
+            'topicName': self.google_topic
+        }
+        response = requests.post(self.watch_endpoint, headers=self.api_headers, json=request_body)
+        if response.json()['historyID']:
+            print("GMail Re-Watch Success")
+        else:
+            print("Gmail Re-Watch Failure")
+
+    def gmail_get_message(self, history_id):
+        self.get_auth_token()
+        headers = self.api_headers
+        headers['startHistoryId'] = history_id
+        response = requests.get(self.watch_endpoint, headers=headers)
+        if response.json()['history'][0]['messagesAdded'][0]['message']['payload']:
+            message = response.json()['history'][0]['messagesAdded'][0]['message']['payload']
+            for header in message['headers']:
+                if header['name'] == 'From':
+                    self.message_from = header['value']
+                if header['name'] == 'Subject':
+                    self.message_subject = header['value']
+            size_in_bytes = message['body']['size']
+            if size_in_bytes < self.max_message_size:
+                self.message_text = base64.urlsafe_b64decode(message['body']['data'])

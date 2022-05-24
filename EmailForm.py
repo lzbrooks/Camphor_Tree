@@ -12,8 +12,3 @@ class EmailForm(Form):
                             )
     message_body = TextAreaField('Message Body', validators=[validators.Length(min=4, max=270),
                                                              validators.DataRequired()])
-
-    def validate_email(self, email):
-        email_whitelist = Config.get_whitelist()
-        if self.email.data not in email_whitelist:
-            raise ValidationError("Invalid")
