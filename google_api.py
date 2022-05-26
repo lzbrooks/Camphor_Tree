@@ -106,15 +106,12 @@ class GMailMessage:
         return response
 
     def send_gmail_message(self):
-        self.get_auth_token()
         self.gmail_create_message()
         return self.post_message()
 
     def gmail_get_message_by_history_id(self, history_id):
-        self.get_auth_token()
-        headers = self.api_headers
-        headers['startHistoryId'] = str(history_id)
-        response = requests.get(self.gmail_history_endpoint, headers=headers)
+        query_params = {'startHistoryId': str(history_id)}
+        response = requests.get(self.gmail_history_endpoint, headers=self.api_headers, params=query_params)
         print(response.json())
         if response.json()['history'][0]['messagesAdded'][0]['message']['payload']:
             message = response.json()['history'][0]['messagesAdded'][0]['message']['payload']
@@ -130,7 +127,6 @@ class GMailMessage:
 
     def gmail_re_watch(self):
         print("Starting GMail Re-Watch...")
-        self.get_auth_token()
         request_body = {
             'labelIds': ['INBOX'],
             'topicName': self.google_topic
