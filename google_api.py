@@ -69,8 +69,8 @@ class GMailMessage:
         self.auth_token = None
         self.get_auth_token()
         self.gmail_message = None
-        self.gmail_endpoint = None
-        self.get_gmail_url()
+        self.gmail_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
+        self.gmail_history_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/history"
         self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
         self.api_headers = {
             'Authorization': f'Bearer {self.auth_token} ',
@@ -89,11 +89,6 @@ class GMailMessage:
         r = requests.post(url, json=data)
         key = r.json()['access_token']
         self.auth_token = key
-
-    def get_gmail_url(self):
-        gmail_endpoint = "https://gmail.googleapis.com"
-        user_id = "me"
-        self.gmail_endpoint = gmail_endpoint + "/gmail/v1/users/" + user_id + "/messages/send"
 
     def gmail_create_message(self):
         message = MIMEText(self.message_text)
@@ -119,8 +114,7 @@ class GMailMessage:
         self.get_auth_token()
         headers = self.api_headers
         headers['startHistoryId'] = str(history_id)
-        print(headers)
-        response = requests.get(self.gmail_endpoint, headers=headers)
+        response = requests.get(self.gmail_history_endpoint, headers=headers)
         print(response.json())
         if response.json()['history'][0]['messagesAdded'][0]['message']['payload']:
             message = response.json()['history'][0]['messagesAdded'][0]['message']['payload']
