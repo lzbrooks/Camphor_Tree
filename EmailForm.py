@@ -1,4 +1,4 @@
-from wtforms import Form, StringField, TextAreaField, validators, ValidationError, RadioField
+from wtforms import Form, StringField, TextAreaField, validators, RadioField
 
 from config import Config
 

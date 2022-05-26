@@ -1,4 +1,5 @@
 import base64
+import json
 from email.mime.text import MIMEText
 
 import requests as requests
@@ -64,6 +65,7 @@ class GMailMessage:
         self.message_subject = message_subject
         self.message_text = message_text
 
+        self.new_gmail_messages = []
         self.max_message_size = Config.get_max_message_size()
 
         self.auth_token = None
@@ -71,6 +73,7 @@ class GMailMessage:
         self.gmail_message = None
         self.gmail_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
         self.gmail_history_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/history"
+        self.gmail_get_message_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/"
         self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
         self.api_headers = {
             'Authorization': f'Bearer {self.auth_token} ',
@@ -109,21 +112,39 @@ class GMailMessage:
         self.gmail_create_message()
         return self.post_message()
 
-    def gmail_get_message_by_history_id(self, history_id):
-        query_params = {'startHistoryId': str(history_id)}
+    def gmail_get_messages_from_push(self, encoded_push_message):
+        push_message = base64.urlsafe_b64decode(encoded_push_message)
+        json_push_message = json.loads(push_message)
+        history_id = json_push_message['historyId']
+        query_params = {'startHistoryId': str(history_id),
+                        'labelId': 'INBOX',
+                        'historyTypes': ['messageAdded']}
         response = requests.get(self.gmail_history_endpoint, headers=self.api_headers, params=query_params)
         print(response.json())
-        if response.json()['history'][0]['messagesAdded'][0]['message']['payload']:
-            message = response.json()['history'][0]['messagesAdded'][0]['message']['payload']
-            for header in message['headers']:
-                if header['name'] == 'From':
-                    self.message_from = header['value']
-                if header['name'] == 'Subject':
-                    self.message_subject = header['value']
-            size_in_bytes = message['body']['size']
-            if size_in_bytes < self.max_message_size:
-                self.message_text = base64.urlsafe_b64decode(message['body']['data'])
-            # TODO: if size bigger and from whitelist, send in multiple emails instead
+        if response.json()['history']:
+            # 'messagesAdded': [{'message':
+            #     {'id': '18100f73879a9d43', 'threadId': '18100f73879a9d43', 'labelIds': ['DRAFT']}
+            #     }]
+            self.new_gmail_messages = [message['messagesAdded'][0]['message'] for message in response.json()['history']
+                                       if message['messagesAdded']]
+
+    def gmail_get_message_by_id(self, message):
+        get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
+        response = requests.get(get_message_endpoint, headers=self.api_headers)
+        message_payload = response.json()['message']['payload']
+        message_from = None
+        message_subject = None
+        message_text = None
+        for header in message_payload['headers']:
+            if header['name'] == 'From':
+                message_from = header['value']
+            if header['name'] == 'Subject':
+                message_subject = header['value']
+        size_in_bytes = message_payload['body']['size']
+        if size_in_bytes < self.max_message_size:
+            message_text = base64.urlsafe_b64decode(message_payload['body']['data'])
+        # TODO: if size bigger and from whitelist, send in multiple emails instead
+        return message_from, message_subject, message_text
 
     def gmail_re_watch(self):
         print("Starting GMail Re-Watch...")

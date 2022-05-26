@@ -1,6 +1,3 @@
-import base64
-import json
-
 from flask import Flask, render_template, request
 
 from EmailForm import EmailForm
@@ -48,15 +45,13 @@ def console():
         gmail_message.send_gmail_message()
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
-        encoded_push_message = request.json['message']['data']
-        push_message = base64.urlsafe_b64decode(encoded_push_message)
-        json_push_message = json.loads(push_message)
-        history_id = json_push_message['historyId']
         message_for_cloud_loop = GMailMessage()
-        message_for_cloud_loop.gmail_get_message_by_history_id(history_id)
-        message_to_cloud_loop = CloudLoopMessage(message_from=message_for_cloud_loop.message_from,
-                                                 message_subject=message_for_cloud_loop.message_subject,
-                                                 message_to_encode=message_for_cloud_loop.message_text)
-        message_to_cloud_loop.send_cloud_loop_message()
+        message_for_cloud_loop.gmail_get_messages_from_push(request.json['message']['data'])
+        for message in message_for_cloud_loop.new_gmail_messages:
+            message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
+            message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
+                                                     message_subject=message_subject,
+                                                     message_to_encode=message_text)
+            message_to_cloud_loop.send_cloud_loop_message()
         return "Success", 200
     return render_template('login.html', form=login_form, server_option=server_option)
