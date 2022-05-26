@@ -43,7 +43,7 @@ def console():
     if request.is_json and "imei" in request.json and request.json['imei'] == Config.get_imei():
         message_from_cloud_loop = CloudLoopMessage(hex_message=request.json['data'])
         gmail_message = GMailMessage(message_to=message_from_cloud_loop.recipient_list,
-                                     message_subject='Satellite Message from Kiki',
+                                     message_subject=message_from_cloud_loop.message_subject,
                                      message_text=message_from_cloud_loop.message)
         gmail_message.send_gmail_message()
         return "Success", 200
