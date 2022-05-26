@@ -43,12 +43,24 @@ class CloudLoopMessage:
                 recipient_list.append(message_part)
             else:
                 message = message_part
-        contacts = Config.get_whitelist()
-        recipient_list = [contacts[recipient] if recipient.isnumeric() else recipient for recipient in recipient_list]
+        recipient_list = CloudLoopMessage.contact_number_to_email(recipient_list)
         return recipient_list, message
+
+    @staticmethod
+    def contact_number_to_email(email_list):
+        contacts = Config.get_whitelist()
+        email_list = [contacts[email] if email.isnumeric() else email for email in email_list]
+        return email_list
+
+    @staticmethod
+    def email_to_contact_number(email_list):
+        contacts = Config.get_whitelist()
+        email_list = [contacts.index(email) if contacts.index(email) else email for email in email_list]
+        return email_list
 
     def get_payload(self):
         payload = ""
+        self.message_from = CloudLoopMessage.email_to_contact_number(self.message_from)
         for sender in self.message_from:
             payload += sender + ","
         payload += self.message_subject + "," + self.message_to_encode

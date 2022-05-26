@@ -114,20 +114,6 @@ class GMailMessage:
         self.gmail_create_message()
         return self.post_message()
 
-    # TODO: cron every day
-    def gmail_re_watch(self):
-        print("Starting GMail Re-Watch...")
-        self.get_auth_token()
-        request_body = {
-            'labelIds': ['INBOX'],
-            'topicName': self.google_topic
-        }
-        response = requests.post(self.watch_endpoint, headers=self.api_headers, json=request_body)
-        if response.json()['historyID']:
-            print("GMail Re-Watch Success")
-        else:
-            print("Gmail Re-Watch Failure")
-
     def gmail_get_message(self, history_id):
         self.get_auth_token()
         headers = self.api_headers
@@ -143,3 +129,22 @@ class GMailMessage:
             size_in_bytes = message['body']['size']
             if size_in_bytes < self.max_message_size:
                 self.message_text = base64.urlsafe_b64decode(message['body']['data'])
+
+    def gmail_re_watch(self):
+        print("Starting GMail Re-Watch...")
+        self.get_auth_token()
+        request_body = {
+            'labelIds': ['INBOX'],
+            'topicName': self.google_topic
+        }
+        response = requests.post(self.watch_endpoint, headers=self.api_headers, json=request_body)
+        if response.json()['historyID']:
+            print("GMail Re-Watch Success")
+        else:
+            print("Gmail Re-Watch Failure")
+
+
+# TODO: cron every day
+if __name__ == "__main__":
+    gmail_re_watch = GMailMessage()
+    gmail_re_watch.gmail_re_watch()

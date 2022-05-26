@@ -1,13 +1,14 @@
 import base64
 import json
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 
 from EmailForm import EmailForm
 from LoginForm import LoginForm
 from cloud_loop_api import CloudLoopMessage
 from config import Config
 from google_api import GMailMessage
+from rock_block_api import RockBlockAPI
 
 app = Flask(__name__)
 
@@ -23,10 +24,17 @@ def console():
         send_status = 'Console'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and email_form.validate():
-        cloud_loop_message = CloudLoopMessage(message_from=email_form.email.data,
-                                              message_subject=email_form.info_level.data,
-                                              message_to_encode=email_form.message_body.data)
-        cloud_loop_message.send_cloud_loop_message()
+        if server_option == 'Satsuki':
+            cloud_loop_message = CloudLoopMessage(message_from=email_form.email.data,
+                                                  message_subject=email_form.info_level.data,
+                                                  message_to_encode=email_form.message_body.data)
+            cloud_loop_message.send_cloud_loop_message()
+        if server_option == 'Mei':
+            rock_block_message = CloudLoopMessage(message_from=email_form.email.data,
+                                                  message_subject=email_form.info_level.data,
+                                                  message_to_encode=email_form.message_body.data)
+            rock_block_api = RockBlockAPI()
+            rock_block_api.send_data_out(rock_block_message.payload)
         send_status = 'Send Success'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and not email_form.validate():
