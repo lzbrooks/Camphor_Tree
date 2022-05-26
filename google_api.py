@@ -67,6 +67,7 @@ class GMailMessage:
         self.max_message_size = Config.get_max_message_size()
 
         self.auth_token = None
+        self.get_auth_token()
         self.gmail_message = None
         self.gmail_endpoint = None
         self.get_gmail_url()
@@ -116,10 +117,8 @@ class GMailMessage:
 
     def gmail_get_message_by_history_id(self, history_id):
         self.get_auth_token()
-        print(self.auth_token)
         headers = self.api_headers
         headers['startHistoryId'] = str(history_id)
-        print(self.api_headers)
         response = requests.get(self.gmail_endpoint, headers=headers)
         print(response.json())
         if response.json()['history'][0]['messagesAdded'][0]['message']['payload']:
