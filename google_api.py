@@ -117,7 +117,7 @@ class GMailMessage:
     def gmail_get_message(self, history_id):
         self.get_auth_token()
         headers = self.api_headers
-        headers['startHistoryId'] = history_id
+        headers['startHistoryId'] = str(history_id)
         response = requests.get(self.watch_endpoint, headers=headers)
         if response.json()['history'][0]['messagesAdded'][0]['message']['payload']:
             message = response.json()['history'][0]['messagesAdded'][0]['message']['payload']
@@ -129,6 +129,7 @@ class GMailMessage:
             size_in_bytes = message['body']['size']
             if size_in_bytes < self.max_message_size:
                 self.message_text = base64.urlsafe_b64decode(message['body']['data'])
+            # TODO: if size bigger and from whitelist, send in multiple emails instead
 
     def gmail_re_watch(self):
         print("Starting GMail Re-Watch...")
