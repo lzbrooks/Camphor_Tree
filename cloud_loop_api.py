@@ -48,15 +48,30 @@ class CloudLoopMessage:
 
     @staticmethod
     def contact_number_to_email(email_list):
-        contacts = Config.get_whitelist()
-        email_list = [contacts[email] if email.isnumeric() else email for email in email_list]
+        email_list = [CloudLoopMessage.get_email_for_contact_number(email) if email.isnumeric()
+                      else email for email in email_list]
         return email_list
+
+    @staticmethod
+    def get_email_for_contact_number(contact):
+        contacts = Config.get_whitelist()
+        for contact_number, email_address in contacts.items():
+            if contact_number == contact:
+                return email_address
 
     @staticmethod
     def email_to_contact_number(email_list):
         contacts = Config.get_whitelist()
-        email_list = [contacts.index(email) if contacts.index(email) else email for email in email_list]
+        email_list = [CloudLoopMessage.get_contact_number_for_email(email) if email in contacts.values()
+                      else email for email in email_list]
         return email_list
+
+    @staticmethod
+    def get_contact_number_for_email(email):
+        contacts = Config.get_whitelist()
+        for contact_number, email_address in contacts.items():
+            if email_address == email:
+                return contact_number
 
     def get_payload(self):
         payload = ""
@@ -64,7 +79,7 @@ class CloudLoopMessage:
         for sender in self.message_from:
             payload += sender + ","
         payload += self.message_subject + "," + self.message_to_encode
-        return self.message_to_encode.hex(payload)
+        return payload.encode().hex()
 
     def send_cloud_loop_message(self):
         if self.message_to_encode:
