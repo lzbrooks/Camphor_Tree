@@ -22,7 +22,7 @@ class CloudLoopMessage:
         if hex_message:
             self.hex_message = hex_message
             self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
-            self.recipient_list, self.message = self.split_recipient()
+            self.recipient_list, self.message_subject, self.message = self.split_recipient()
         # Message to be Hex Encoded
         if message_to_encode:
             self.auth_token = Config.get_cloud_loop_auth_token()
@@ -35,16 +35,16 @@ class CloudLoopMessage:
     def split_recipient(self):
         message_parts = self.decoded_message.split(",")
         recipient_list = []
-        message = None
+        subject_and_body = []
         for message_part in message_parts:
             if message_part.isnumeric():
                 recipient_list.append(message_part)
             if re.search(r'\S+@\S+', message_part):
                 recipient_list.append(message_part)
             else:
-                message = message_part
+                subject_and_body.append(message_part)
         recipient_list = CloudLoopMessage.contact_number_to_email(recipient_list)
-        return recipient_list, message
+        return recipient_list, subject_and_body[0], subject_and_body[1]
 
     @staticmethod
     def contact_number_to_email(email_list):
