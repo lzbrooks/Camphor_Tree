@@ -50,9 +50,8 @@ def console():
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
         encoded_push_message = request.json['message']['data']
         push_message = base64.urlsafe_b64decode(encoded_push_message)
-        print(push_message)
         json_push_message = json.loads(push_message)
-        history_id = json_push_message['historyID']
+        history_id = json_push_message['historyId']
         message_for_cloud_loop = GMailMessage()
         message_for_cloud_loop.gmail_get_message(history_id)
         message_to_cloud_loop = CloudLoopMessage(message_from=message_for_cloud_loop.message_from,
