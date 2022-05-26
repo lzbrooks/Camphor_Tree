@@ -10,6 +10,10 @@ from cloud_loop_api import CloudLoopMessage
 # sudo pip3 install --upgrade adafruit-python-shell
 # pip3 install Adafruit-Blinka
 # pip3 install adafruit-circuitpython-rockblock
+#
+# adafruit-python-shell~=1.3.3
+# Adafruit-Blinka~=7.3.0
+# adafruit-circuitpython-rockblock~=1.3.5
 
 
 class RockBlockAPI:
