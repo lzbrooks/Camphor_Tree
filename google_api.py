@@ -119,6 +119,7 @@ class GMailMessage:
         headers = self.api_headers
         headers['startHistoryId'] = str(history_id)
         response = requests.get(self.gmail_endpoint, headers=headers)
+        print(response.json())
         if response.json()['history'][0]['messagesAdded'][0]['message']['payload']:
             message = response.json()['history'][0]['messagesAdded'][0]['message']['payload']
             for header in message['headers']:
