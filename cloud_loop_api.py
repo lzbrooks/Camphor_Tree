@@ -28,7 +28,10 @@ class CloudLoopMessage:
             self.auth_token = Config.get_cloud_loop_auth_token()
             self.hardware_id = Config.get_rock_block_id()
             self.message_to_encode = message_to_encode
-            self.message_from = message_from
+            if isinstance(message_from, list):
+                self.message_from = message_from
+            else:
+                self.message_from = [message_from]
             self.message_subject = message_subject
             self.payload = self.get_payload()
 
