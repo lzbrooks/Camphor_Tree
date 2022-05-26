@@ -53,7 +53,7 @@ def console():
         json_push_message = json.loads(push_message)
         history_id = json_push_message['historyId']
         message_for_cloud_loop = GMailMessage()
-        message_for_cloud_loop.gmail_get_message(history_id)
+        message_for_cloud_loop.gmail_get_message_by_history_id(history_id)
         message_to_cloud_loop = CloudLoopMessage(message_from=message_for_cloud_loop.message_from,
                                                  message_subject=message_for_cloud_loop.message_subject,
                                                  message_to_encode=message_for_cloud_loop.message_text)
