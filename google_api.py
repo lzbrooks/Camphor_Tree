@@ -116,6 +116,7 @@ class GMailMessage:
 
     def gmail_get_message_by_history_id(self, history_id):
         self.get_auth_token()
+        print(self.api_headers)
         headers = self.api_headers
         headers['startHistoryId'] = str(history_id)
         response = requests.get(self.gmail_endpoint, headers=headers)
