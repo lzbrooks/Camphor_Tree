@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 from email.mime.text import MIMEText
 
 import requests as requests
@@ -128,7 +129,7 @@ class GMailMessage:
             message_payload = response.json()['payload']
             for header in message_payload['headers']:
                 if header['name'] == 'From':
-                    message_from = header['value']
+                    message_from = re.findall(r'(?<=<).*?(?=>)', header['value'])
                 if header['name'] == 'Subject':
                     message_subject = header['value']
             message_parts = message_payload['parts']
