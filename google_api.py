@@ -72,7 +72,7 @@ class GMailMessage:
         self.get_auth_token()
         self.gmail_message = None
         self.gmail_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
-        self.gmail_history_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/history"
+        self.gmail_message_list_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
         self.gmail_get_message_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/"
         self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
         self.api_headers = {
@@ -113,19 +113,14 @@ class GMailMessage:
         return self.post_message()
 
     def gmail_get_messages_from_push(self, encoded_push_message):
-        push_message = base64.urlsafe_b64decode(encoded_push_message)
-        json_push_message = json.loads(push_message)
-        history_id = json_push_message['historyId']
-        print("New GMail Push HistoryId: " + str(history_id))
-        query_params = {'startHistoryId': str(history_id)}
-        response = requests.get(self.gmail_history_endpoint, headers=self.api_headers, params=query_params)
+        query_params = {'maxResults': str(1)}
+        response = requests.get(self.gmail_message_list_endpoint, headers=self.api_headers, params=query_params)
         print(response.json())
-        if 'history' in response.json():
+        if 'messages' in response.json():
             # 'messagesAdded': [{'message':
             #     {'id': '18100f73879a9d43', 'threadId': '18100f73879a9d43', 'labelIds': ['DRAFT']}
             #     }]
-            self.new_gmail_messages = [message['messagesAdded'][0]['message'] for message in response.json()['history']
-                                       if 'messagesAdded' in message]
+            self.new_gmail_messages = response.json()['messages']
             print("New Messages: ")
             [print(message) for message in self.new_gmail_messages]
 
