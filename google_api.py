@@ -121,6 +121,7 @@ class GMailMessage:
                         'labelId': 'INBOX',
                         'historyTypes': ['messageAdded']}
         response = requests.get(self.gmail_history_endpoint, headers=self.api_headers, params=query_params)
+        print(response.json())
         if 'history' in response.json():
             # 'messagesAdded': [{'message':
             #     {'id': '18100f73879a9d43', 'threadId': '18100f73879a9d43', 'labelIds': ['DRAFT']}
