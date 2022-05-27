@@ -20,10 +20,12 @@ class CloudLoopMessage:
     def __init__(self, hex_message=None, message_from=None, message_subject=None, message_to_encode=None):
         # Hex Encoded Message
         if hex_message:
-            print(hex_message)
             self.hex_message = hex_message
             self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
-            self.recipient_list, self.message_subject, self.message = self.split_recipient()
+            self.recipient_list = []
+            self.message_subject = None
+            self.message = None
+            self.split_recipient()
         # Message to be Hex Encoded
         self.auth_token = None
         self.hardware_id = None
@@ -60,13 +62,16 @@ class CloudLoopMessage:
         else:
             recipient_list = message_parts
             message_text_list = message_parts
+        print("recipient list and message_text_list")
+        print(recipient_list)
+        print(message_text_list)
         recipient_list_filtered = CloudLoopMessage.get_recipient_list(recipient_list)
         if len(recipient_list_filtered) < len(recipient_list):
             message_text_list = message_parts
         message_text = "".join(message_text_list)
-        recipient_list = CloudLoopMessage.contact_number_to_email(recipient_list)
-        if recipient_list and message_subject and message_text:
-            return recipient_list, message_subject, message_text
+        self.recipient_list = recipient_list_filtered
+        self.message_subject = message_subject
+        self.message = message_text
 
     @staticmethod
     def get_recipient_list(message_parts):
