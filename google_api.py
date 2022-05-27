@@ -121,7 +121,7 @@ class GMailMessage:
             #     {'id': '18100f73879a9d43', 'threadId': '18100f73879a9d43', 'labelIds': ['DRAFT']}
             #     }]
             self.new_gmail_messages = response.json()['messages']
-            print("New Messages: ")
+            print("New Messages:")
             [print(message) for message in self.new_gmail_messages]
 
     def gmail_get_message_by_id(self, message):
@@ -132,7 +132,8 @@ class GMailMessage:
         message_text = None
         if 'payload' in response.json():
             message_payload = response.json()['payload']
-            print("New Message Payload: " + message_payload)
+            print("New Message Payload:")
+            print(message_payload)
             for header in message_payload['headers']:
                 if header['name'] == 'From':
                     message_from = header['value']
