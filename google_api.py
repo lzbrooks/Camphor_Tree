@@ -130,7 +130,6 @@ class GMailMessage:
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
         response = requests.get(get_message_endpoint, headers=self.api_headers)
-        print(response.json().keys())
         message_from = None
         message_subject = None
         message_text = None
