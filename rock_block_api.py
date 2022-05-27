@@ -55,14 +55,13 @@ if __name__ == "__main__":
     print("Number of Messages in Queue: " + str(status_of_mailbox[5]))
     if status_of_mailbox[5] > 0:
         number_of_messages_in_buffer += status_of_mailbox[5]
-    print("Number of Messages in Queue: " + str(number_of_messages_in_buffer))
-    for message in range(number_of_messages_in_buffer):
-        hex_data = rock_block_ping.get_data_in()
-        if hex_data:
-            message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
-            message_to_write = [message_from_rock_block.recipient_list, message_from_rock_block.message_subject,
-                                message_from_rock_block.message]
-            message_file_name = "" + str(datetime.now()) + ".txt"
-            with open(message_file_name, "w") as file:
-                file.writelines(message_to_write)
-            print("Message Witten To: " + message_file_name)
+    print("Number of Messages Total: " + str(number_of_messages_in_buffer))
+    hex_data = rock_block_ping.get_data_in()
+    if hex_data:
+        message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
+        message_to_write = [message_from_rock_block.recipient_list, message_from_rock_block.message_subject,
+                            message_from_rock_block.message]
+        message_file_name = "" + str(datetime.now()) + ".txt"
+        with open(message_file_name, "w") as file:
+            file.writelines(message_to_write)
+        print("Message Witten To: " + message_file_name)
