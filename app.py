@@ -45,13 +45,13 @@ def console():
         gmail_message.send_gmail_message()
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
-        # message_for_cloud_loop = GMailMessage()
-        # message_for_cloud_loop.gmail_get_messages_from_push(request.json['message']['data'])
-        # for message in message_for_cloud_loop.new_gmail_messages:
-        #     message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
-            # message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
-            #                                          message_subject=message_subject,
-            #                                          message_to_encode=message_text)
-            # message_to_cloud_loop.send_cloud_loop_message()
+        message_for_cloud_loop = GMailMessage()
+        message_for_cloud_loop.gmail_get_messages_from_push(request.json['message']['data'])
+        for message in message_for_cloud_loop.new_gmail_messages:
+            message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
+            message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
+                                                     message_subject=message_subject,
+                                                     message_to_encode=message_text)
+            message_to_cloud_loop.send_cloud_loop_message()
         return "Success", 200
     return render_template('login.html', form=login_form, server_option=server_option)
