@@ -47,18 +47,25 @@ class CloudLoopMessage:
         message_parts = self.decoded_message.split(",")
         print(message_parts)
         message_subject = None
-        message_split_index = 1
+        message_split_index = None
+        recipient_list = CloudLoopMessage.get_recipient_list(message_parts, message_split_index)
         for message_part_number, message_part in enumerate(message_parts):
-            if not message_part.isnumeric() and not re.search(r'\S+@\S+', message_part):
+            if message_part not in recipient_list:
                 message_subject = message_part
                 message_split_index = message_part_number
                 break
-        recipient_list = [message_part for message_part in message_parts[:message_split_index]
-                          if message_part.isnumeric() or re.search(r'\S+@\S+', message_part)]
+        recipient_list = CloudLoopMessage.get_recipient_list(message_parts, message_split_index)
         message_text_begin_index = message_split_index - 1
         message_text = "".join(message_parts[message_text_begin_index:])
         recipient_list = CloudLoopMessage.contact_number_to_email(recipient_list)
-        return recipient_list, message_subject, message_text
+        if recipient_list and message_subject and message_text:
+            return recipient_list, message_subject, message_text
+
+    @staticmethod
+    def get_recipient_list(message_parts, message_split_index):
+        recipient_list = [message_part for message_part in message_parts[:message_split_index]
+                          if message_part.isnumeric() or re.search(r'\S+@\S+', message_part)]
+        return recipient_list
 
     @staticmethod
     def contact_number_to_email(email_list):
