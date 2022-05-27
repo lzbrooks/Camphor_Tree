@@ -120,7 +120,6 @@ class GMailMessage:
                         'labelId': 'INBOX',
                         'historyTypes': ['messageAdded']}
         response = requests.get(self.gmail_history_endpoint, headers=self.api_headers, params=query_params)
-        print(response.json())
         if response.json()['history']:
             # 'messagesAdded': [{'message':
             #     {'id': '18100f73879a9d43', 'threadId': '18100f73879a9d43', 'labelIds': ['DRAFT']}
@@ -131,6 +130,7 @@ class GMailMessage:
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
         response = requests.get(get_message_endpoint, headers=self.api_headers)
+        print(response.json())
         message_payload = response.json()['message']['payload']
         message_from = None
         message_subject = None
