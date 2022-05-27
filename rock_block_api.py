@@ -44,9 +44,11 @@ if __name__ == "__main__":
     rock_block_ping = RockBlockAPI()
     rock_block_ping.talk_to_rock_block()
     hex_data = rock_block_ping.get_data_in()
-    message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
-    message_to_write = [message_from_rock_block.recipient_list, message_from_rock_block.message_subject,
-                        message_from_rock_block.message]
-    message_file_name = "" + str(datetime.now()) + ".txt"
-    with open(message_file_name, "w") as file:
-        file.writelines(message_to_write)
+    if hex_data:
+        print("Data Received")
+        message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
+        message_to_write = [message_from_rock_block.recipient_list, message_from_rock_block.message_subject,
+                            message_from_rock_block.message]
+        message_file_name = "" + str(datetime.now()) + ".txt"
+        with open(message_file_name, "w") as file:
+            file.writelines(message_to_write)
