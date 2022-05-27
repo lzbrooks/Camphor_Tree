@@ -1,5 +1,6 @@
 import base64
 import re
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import requests as requests
@@ -99,17 +100,11 @@ class GMailMessage:
         print(self.message_from)
         print(self.message_subject)
 
-        # message = MIMEMultipart()
-        #         message['Subject'] = self.message_subject
-        #         message_text = self.message_text
-        #         message.attach(MIMEText(message_text, 'plain'))
-        #         message['From'] = self.message_from
-        #         message['To'] = self.message_to
-
-        message = MIMEText(self.message_text)
+        message = MIMEMultipart()
         message['To'] = ", ".join(self.message_to)
         message['From'] = self.message_from
         message['Subject'] = self.message_subject
+        message.attach(MIMEText(self.message_text, 'text/plain'))
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
         create_message = {
             'raw': encoded_message

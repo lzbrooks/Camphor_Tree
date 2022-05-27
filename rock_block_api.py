@@ -16,7 +16,6 @@ class RockBlockAPI:
     def __init__(self):
         uart = serial.Serial("/dev/serial0", 19200)
         self.rock_block = RockBlock(uart)
-        # print(self.rock_block.model)
 
     def talk_to_rock_block(self):
         print("Talking to satellite...")

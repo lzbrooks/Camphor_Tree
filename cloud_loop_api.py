@@ -43,29 +43,36 @@ class CloudLoopMessage:
             self.payload = self.get_payload()
 
     def split_recipient(self):
-        print(self.decoded_message)
         message_parts = self.decoded_message.split(",")
-        print(message_parts)
         message_subject = None
-        message_split_index = None
-        recipient_list = CloudLoopMessage.get_recipient_list(message_parts, message_split_index)
-        for message_part_number, message_part in enumerate(message_parts):
-            if message_part not in recipient_list:
-                message_subject = message_part
-                message_split_index = message_part_number
-                break
-        recipient_list = CloudLoopMessage.get_recipient_list(message_parts, message_split_index)
-        message_text_begin_index = message_split_index - 1
-        message_text = "".join(message_parts[message_text_begin_index:])
+        if 'Info' in message_parts:
+            message_subject = 'Info'
+            recipient_list = message_parts[:message_parts.index('Info')]
+            message_text_list = message_parts[message_parts.index('Info') + 1:]
+        elif 'Urgent' in message_parts:
+            message_subject = 'Urgent'
+            recipient_list = message_parts[:message_parts.index('Urgent')]
+            message_text_list = message_parts[message_parts.index('Urgent') + 1:]
+        elif 'Emergency' in message_parts:
+            message_subject = 'Emergency'
+            recipient_list = message_parts[:message_parts.index('Emergency')]
+            message_text_list = message_parts[message_parts.index('Emergency') + 1:]
+        else:
+            recipient_list = message_parts
+            message_text_list = message_parts
+        recipient_list_filtered = CloudLoopMessage.get_recipient_list(recipient_list)
+        if len(recipient_list_filtered) < len(recipient_list):
+            message_text_list = message_parts
+        message_text = "".join(message_text_list)
         recipient_list = CloudLoopMessage.contact_number_to_email(recipient_list)
         if recipient_list and message_subject and message_text:
             return recipient_list, message_subject, message_text
 
     @staticmethod
-    def get_recipient_list(message_parts, message_split_index):
-        recipient_list = [message_part for message_part in message_parts[:message_split_index]
-                          if message_part.isnumeric() or re.search(r'\S+@\S+', message_part)]
-        return recipient_list
+    def get_recipient_list(message_parts):
+        message_list = [message_part for message_part in message_parts
+                        if message_part.isnumeric() or re.search(r'\S+@\S+', message_part)]
+        return message_list
 
     @staticmethod
     def contact_number_to_email(email_list):
