@@ -45,6 +45,7 @@ if __name__ == "__main__":
     rock_block_ping = RockBlockAPI()
     status_of_mailbox = rock_block_ping.talk_to_rock_block()
     number_of_messages_in_buffer = status_of_mailbox[-1]
+    print(status_of_mailbox)
     print("Messages To Receive: " + str(number_of_messages_in_buffer))
     for message in range(number_of_messages_in_buffer):
         hex_data = rock_block_ping.get_data_in()
