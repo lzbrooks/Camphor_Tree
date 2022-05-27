@@ -116,6 +116,7 @@ class GMailMessage:
         push_message = base64.urlsafe_b64decode(encoded_push_message)
         json_push_message = json.loads(push_message)
         history_id = json_push_message['historyId']
+        print("New GMail Push HistoryId: " + str(history_id))
         query_params = {'startHistoryId': str(history_id),
                         'labelId': 'INBOX',
                         'historyTypes': ['messageAdded']}
@@ -125,7 +126,9 @@ class GMailMessage:
             #     {'id': '18100f73879a9d43', 'threadId': '18100f73879a9d43', 'labelIds': ['DRAFT']}
             #     }]
             self.new_gmail_messages = [message['messagesAdded'][0]['message'] for message in response.json()['history']
-                                       if message['messagesAdded']]
+                                       if 'messagesAdded' in message]
+            print("New Messages: ")
+            [print(message) for message in self.new_gmail_messages]
 
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
@@ -135,6 +138,7 @@ class GMailMessage:
         message_text = None
         if 'payload' in response.json():
             message_payload = response.json()['payload']
+            print("New Message Payload: " + message_payload)
             for header in message_payload['headers']:
                 if header['name'] == 'From':
                     message_from = header['value']
@@ -144,6 +148,10 @@ class GMailMessage:
             if size_in_bytes < int(self.max_message_size) and 'data' in message_payload['body']:
                 message_text = base64.urlsafe_b64decode(message_payload['body']['data'])
             # TODO: if size bigger and from whitelist, send in multiple emails instead
+        print("New Message Processed:")
+        print(message_from)
+        print(message_subject)
+        print(message_text)
         return message_from, message_subject, message_text
 
     def gmail_re_watch(self):
