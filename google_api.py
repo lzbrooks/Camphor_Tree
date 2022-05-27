@@ -95,12 +95,6 @@ class GMailMessage:
         self.auth_token = key
 
     def gmail_create_message(self):
-        print("gmail message")
-        print(self.message_text)
-        print(self.message_to)
-        print(self.message_from)
-        print(self.message_subject)
-
         message = MIMEMultipart()
         message['To'] = ", ".join(self.message_to)
         message['From'] = self.message_from

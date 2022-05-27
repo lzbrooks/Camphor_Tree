@@ -18,21 +18,21 @@ from config import Config
 
 class CloudLoopMessage:
     def __init__(self, hex_message=None, message_from=None, message_subject=None, message_to_encode=None):
-        # Hex Encoded Message
-        if hex_message:
-            self.hex_message = hex_message
-            self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
-            self.recipient_list = []
-            self.message_subject = None
-            self.message = None
-            self.split_recipient()
-        # Message to be Hex Encoded
+        self.message_subject = None
         self.auth_token = None
         self.hardware_id = None
         self.message_to_encode = None
         self.message_from = None
-        self.message_subject = None
         self.payload = None
+        self.recipient_list = []
+        self.message_subject = None
+        self.message = None
+        # Hex Encoded Message
+        if hex_message:
+            self.hex_message = hex_message
+            self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
+            self.split_recipient()
+        # Message to be Hex Encoded
         if message_to_encode:
             self.auth_token = Config.get_cloud_loop_auth_token()
             self.hardware_id = Config.get_rock_block_id()
@@ -62,10 +62,6 @@ class CloudLoopMessage:
         else:
             recipient_list = message_parts
             message_text_list = message_parts
-        print("recipient list, message_text_list, and message_subject")
-        print(recipient_list)
-        print(message_text_list)
-        print(message_subject)
         recipient_list_filtered = CloudLoopMessage.get_recipient_list(recipient_list)
         recipient_list_mapped = CloudLoopMessage.contact_number_to_email(recipient_list_filtered)
         if len(recipient_list_mapped) < len(recipient_list):

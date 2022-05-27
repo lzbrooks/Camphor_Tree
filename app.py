@@ -50,8 +50,6 @@ def console():
         print("POST GMail Message Received")
         message_for_cloud_loop = GMailMessage()
         message_for_cloud_loop.gmail_get_messages_from_push()
-        print("cloud loop orig gmail message json")
-        print(message_for_cloud_loop.new_gmail_messages)
         for message in message_for_cloud_loop.new_gmail_messages:
             message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
             print("POST GMail Message Processed")
