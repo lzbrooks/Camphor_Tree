@@ -95,16 +95,17 @@ class GMailMessage:
         self.auth_token = key
 
     def gmail_create_message(self):
-        message = MIMEMultipart()
-        message['To'] = ", ".join(self.message_to)
-        message['From'] = self.message_from
-        message['Subject'] = self.message_subject
-        message.attach(MIMEText(self.message_text, 'plain'))
-        encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-        create_message = {
-            'raw': encoded_message
-        }
-        self.gmail_message = create_message
+        if self.message_to:
+            message = MIMEMultipart()
+            message['To'] = ", ".join(self.message_to)
+            message['From'] = self.message_from
+            message['Subject'] = self.message_subject
+            message.attach(MIMEText(self.message_text, 'plain'))
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+            create_message = {
+                'raw': encoded_message
+            }
+            self.gmail_message = create_message
 
     def post_message(self):
         response = requests.post(self.gmail_endpoint, headers=self.api_headers, json=self.gmail_message)

@@ -27,6 +27,7 @@ class RockBlockAPI:
             print(retry, status)
             retry += 1
         print("\nDONE.")
+        return status
 
     def get_data_in(self):
         return self.rock_block.data_in
@@ -42,13 +43,18 @@ class RockBlockAPI:
 # TODO: cron every day
 if __name__ == "__main__":
     rock_block_ping = RockBlockAPI()
-    rock_block_ping.talk_to_rock_block()
-    hex_data = rock_block_ping.get_data_in()
-    if hex_data:
-        print("Data Received")
-        message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
-        message_to_write = [message_from_rock_block.recipient_list, message_from_rock_block.message_subject,
-                            message_from_rock_block.message]
-        message_file_name = "" + str(datetime.now()) + ".txt"
-        with open(message_file_name, "w") as file:
-            file.writelines(message_to_write)
+    status_of_mailbox = rock_block_ping.talk_to_rock_block()
+    number_of_messages_in_buffer = status_of_mailbox[-1]
+    print("Messages To Receive: " + str(number_of_messages_in_buffer))
+    for message in range(number_of_messages_in_buffer):
+        hex_data = rock_block_ping.get_data_in()
+        if hex_data:
+            message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
+            message_to_write = [message_from_rock_block.recipient_list, message_from_rock_block.message_subject,
+                                message_from_rock_block.message]
+            message_file_name = "" + str(datetime.now()) + ".txt"
+            with open(message_file_name, "w") as file:
+                file.writelines(message_to_write)
+            print("Message Witten To: " + message_file_name)
+    if number_of_messages_in_buffer == 0:
+        print("No Messages Received")
