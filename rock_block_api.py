@@ -57,6 +57,7 @@ if __name__ == "__main__":
         number_of_messages_in_buffer += status_of_mailbox[5]
     print("Number of Messages Total: " + str(number_of_messages_in_buffer))
     hex_data = rock_block_ping.get_data_in()
+    print(hex_data)
     if hex_data:
         message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
         message_to_write = [message_from_rock_block.recipient_list, message_from_rock_block.message_subject,
