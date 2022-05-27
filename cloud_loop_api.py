@@ -88,11 +88,11 @@ class CloudLoopMessage:
         for sender in self.message_from:
             payload += sender + ","
         payload += self.message_subject + "," + self.message_to_encode
-        return payload.encode().hex()
+        return payload.encode()
 
     def send_cloud_loop_message(self):
         if self.message_to_encode:
             send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
-            url = send_message_api + self.hardware_id + "&payload=" + self.payload + "&token=" + self.auth_token
+            url = send_message_api + self.hardware_id + "&payload=" + self.payload.hex() + "&token=" + self.auth_token
             headers = {"Accept": "application/json"}
             return requests.get(url, headers=headers)
