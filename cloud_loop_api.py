@@ -62,14 +62,16 @@ class CloudLoopMessage:
         else:
             recipient_list = message_parts
             message_text_list = message_parts
-        print("recipient list and message_text_list")
+        print("recipient list, message_text_list, and message_subject")
         print(recipient_list)
         print(message_text_list)
+        print(message_subject)
         recipient_list_filtered = CloudLoopMessage.get_recipient_list(recipient_list)
-        if len(recipient_list_filtered) < len(recipient_list):
+        recipient_list_mapped = CloudLoopMessage.contact_number_to_email(recipient_list_filtered)
+        if len(recipient_list_mapped) < len(recipient_list):
             message_text_list = message_parts
         message_text = "".join(message_text_list)
-        self.recipient_list = recipient_list_filtered
+        self.recipient_list = recipient_list_mapped
         self.message_subject = message_subject
         self.message = message_text
 

@@ -95,6 +95,7 @@ class GMailMessage:
         self.auth_token = key
 
     def gmail_create_message(self):
+        print("gmail message")
         print(self.message_text)
         print(self.message_to)
         print(self.message_from)
@@ -104,7 +105,7 @@ class GMailMessage:
         message['To'] = ", ".join(self.message_to)
         message['From'] = self.message_from
         message['Subject'] = self.message_subject
-        message.attach(MIMEText(self.message_text, 'text/plain'))
+        message.attach(MIMEText(self.message_text, 'plain'))
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
         create_message = {
             'raw': encoded_message
