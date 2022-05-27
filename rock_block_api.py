@@ -55,6 +55,7 @@ if __name__ == "__main__":
     print("Number of Messages in Queue: " + str(status_of_mailbox[5]))
     if status_of_mailbox[5] > 0:
         number_of_messages_in_buffer += status_of_mailbox[5]
+    print("Number of Messages in Queue: " + str(number_of_messages_in_buffer))
     for message in range(number_of_messages_in_buffer):
         hex_data = rock_block_ping.get_data_in()
         if hex_data:
