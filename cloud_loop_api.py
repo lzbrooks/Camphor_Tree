@@ -46,17 +46,19 @@ class CloudLoopMessage:
         print(self.decoded_message)
         message_parts = self.decoded_message.split(",")
         print(message_parts)
-        recipient_list = []
-        subject_and_body = []
-        for message_part in message_parts:
-            if message_part.isnumeric():
-                recipient_list.append(message_part)
-            if re.search(r'\S+@\S+', message_part):
-                recipient_list.append(message_part)
-            else:
-                subject_and_body.append(message_part)
+        message_subject = None
+        message_split_index = 1
+        for message_part_number, message_part in enumerate(message_parts):
+            if not message_part.isnumeric() and not re.search(r'\S+@\S+', message_part):
+                message_subject = message_part
+                message_split_index = message_part_number
+                break
+        recipient_list = [message_part for message_part in message_parts[:message_split_index]
+                          if message_part.isnumeric() or re.search(r'\S+@\S+', message_part)]
+        message_text_begin_index = message_split_index - 1
+        message_text = "".join(message_parts[message_text_begin_index:])
         recipient_list = CloudLoopMessage.contact_number_to_email(recipient_list)
-        return recipient_list, subject_and_body[0], subject_and_body[1]
+        return recipient_list, message_subject, message_text
 
     @staticmethod
     def contact_number_to_email(email_list):
