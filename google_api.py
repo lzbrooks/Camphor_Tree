@@ -146,7 +146,7 @@ class GMailMessage:
                         and 'data' in message_part['body']:
                     size_in_bytes = message_part['body']['size']
                     if size_in_bytes < int(self.max_message_size):
-                        message_text = base64.urlsafe_b64decode(message_part['body']['data'])
+                        message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
                     # TODO: if size bigger and from whitelist, send in multiple emails instead
         print("New Message Processed:")
         print(message_from)
