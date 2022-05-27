@@ -139,10 +139,15 @@ class GMailMessage:
                     message_from = header['value']
                 if header['name'] == 'Subject':
                     message_subject = header['value']
-            size_in_bytes = message_payload['body']['size']
-            if size_in_bytes < int(self.max_message_size) and 'data' in message_payload['body']:
-                message_text = base64.urlsafe_b64decode(message_payload['body']['data'])
-            # TODO: if size bigger and from whitelist, send in multiple emails instead
+            message_parts = message_payload['parts']
+            for message_part in message_parts:
+                if 'mimeType' in message_part and message_part['mimeType'] == 'text/plain' \
+                        and 'size' in message_part['body'] \
+                        and 'data' in message_part['body']:
+                    size_in_bytes = message_part['body']['size']
+                    if size_in_bytes < int(self.max_message_size):
+                        message_text = base64.urlsafe_b64decode(message_part['body']['data'])
+                    # TODO: if size bigger and from whitelist, send in multiple emails instead
         print("New Message Processed:")
         print(message_from)
         print(message_subject)

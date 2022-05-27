@@ -24,6 +24,12 @@ class CloudLoopMessage:
             self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
             self.recipient_list, self.message_subject, self.message = self.split_recipient()
         # Message to be Hex Encoded
+        self.auth_token = None
+        self.hardware_id = None
+        self.message_to_encode = None
+        self.message_from = None
+        self.message_subject = None
+        self.payload = None
         if message_to_encode:
             self.auth_token = Config.get_cloud_loop_auth_token()
             self.hardware_id = Config.get_rock_block_id()
