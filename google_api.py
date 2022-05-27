@@ -112,17 +112,11 @@ class GMailMessage:
         self.gmail_create_message()
         return self.post_message()
 
-    def gmail_get_messages_from_push(self, encoded_push_message):
+    def gmail_get_messages_from_push(self):
         query_params = {'maxResults': str(1)}
         response = requests.get(self.gmail_message_list_endpoint, headers=self.api_headers, params=query_params)
-        print(response.json())
         if 'messages' in response.json():
-            # 'messagesAdded': [{'message':
-            #     {'id': '18100f73879a9d43', 'threadId': '18100f73879a9d43', 'labelIds': ['DRAFT']}
-            #     }]
             self.new_gmail_messages = response.json()['messages']
-            print("New Messages:")
-            [print(message) for message in self.new_gmail_messages]
 
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
@@ -132,8 +126,6 @@ class GMailMessage:
         message_text = None
         if 'payload' in response.json():
             message_payload = response.json()['payload']
-            print("New Message Payload:")
-            print(message_payload)
             for header in message_payload['headers']:
                 if header['name'] == 'From':
                     message_from = header['value']
@@ -148,10 +140,6 @@ class GMailMessage:
                     if size_in_bytes < int(self.max_message_size):
                         message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
                     # TODO: if size bigger and from whitelist, send in multiple emails instead
-        print("New Message Processed:")
-        print(message_from)
-        print(message_subject)
-        print(message_text)
         return message_from, message_subject, message_text
 
     def gmail_re_watch(self):
