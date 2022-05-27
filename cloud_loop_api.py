@@ -30,7 +30,8 @@ class CloudLoopMessage:
         # Hex Encoded Message
         if hex_message:
             self.hex_message = hex_message
-            self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
+            self.decoded_message = None
+            self.decode_hex_message()
             self.split_recipient()
         # Message to be Hex Encoded
         if message_to_encode:
@@ -43,6 +44,12 @@ class CloudLoopMessage:
                 self.message_from = [message_from]
             self.message_subject = message_subject
             self.payload = self.get_payload()
+
+    def decode_hex_message(self):
+        if isinstance(self.hex_message, bytes):
+            self.decoded_message = self.hex_message.decode('ascii')
+        else:
+            self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
 
     def split_recipient(self):
         message_parts = self.decoded_message.split(",")
