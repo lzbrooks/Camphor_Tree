@@ -131,7 +131,7 @@ class GMailMessage:
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
         response = requests.get(get_message_endpoint, headers=self.api_headers)
         print(response.json())
-        message_payload = response.json()['message']['payload']
+        message_payload = response.json()['payload']
         message_from = None
         message_subject = None
         message_text = None
