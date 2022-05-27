@@ -130,7 +130,6 @@ class GMailMessage:
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
         response = requests.get(get_message_endpoint, headers=self.api_headers)
-        print(response.json())
         message_payload = response.json()['payload']
         message_from = None
         message_subject = None
@@ -141,7 +140,7 @@ class GMailMessage:
             if header['name'] == 'Subject':
                 message_subject = header['value']
         size_in_bytes = message_payload['body']['size']
-        if size_in_bytes < self.max_message_size:
+        if size_in_bytes < int(self.max_message_size):
             message_text = base64.urlsafe_b64decode(message_payload['body']['data'])
         # TODO: if size bigger and from whitelist, send in multiple emails instead
         return message_from, message_subject, message_text
