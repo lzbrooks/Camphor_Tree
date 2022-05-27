@@ -135,15 +135,16 @@ class GMailMessage:
         message_from = None
         message_subject = None
         message_text = None
-        for header in message_payload['headers']:
-            if header['name'] == 'From':
-                message_from = header['value']
-            if header['name'] == 'Subject':
-                message_subject = header['value']
-        size_in_bytes = message_payload['body']['size']
-        if size_in_bytes < int(self.max_message_size):
-            message_text = base64.urlsafe_b64decode(message_payload['body']['data'])
-        # TODO: if size bigger and from whitelist, send in multiple emails instead
+        if response.json()['payload']:
+            for header in message_payload['headers']:
+                if header['name'] == 'From':
+                    message_from = header['value']
+                if header['name'] == 'Subject':
+                    message_subject = header['value']
+            size_in_bytes = message_payload['body']['size']
+            if size_in_bytes < int(self.max_message_size) and message_payload['body']['data']:
+                message_text = base64.urlsafe_b64decode(message_payload['body']['data'])
+            # TODO: if size bigger and from whitelist, send in multiple emails instead
         return message_from, message_subject, message_text
 
     def gmail_re_watch(self):
