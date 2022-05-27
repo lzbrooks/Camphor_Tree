@@ -107,7 +107,7 @@ class GMailMessage:
         #         message['To'] = self.message_to
 
         message = MIMEText(self.message_text)
-        message['To'] = self.message_to
+        message['To'] = ", ".join(self.message_to)
         message['From'] = self.message_from
         message['Subject'] = self.message_subject
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()

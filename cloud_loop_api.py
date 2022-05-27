@@ -20,6 +20,7 @@ class CloudLoopMessage:
     def __init__(self, hex_message=None, message_from=None, message_subject=None, message_to_encode=None):
         # Hex Encoded Message
         if hex_message:
+            print(hex_message)
             self.hex_message = hex_message
             self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
             self.recipient_list, self.message_subject, self.message = self.split_recipient()
@@ -42,7 +43,9 @@ class CloudLoopMessage:
             self.payload = self.get_payload()
 
     def split_recipient(self):
+        print(self.decoded_message)
         message_parts = self.decoded_message.split(",")
+        print(message_parts)
         recipient_list = []
         subject_and_body = []
         for message_part in message_parts:
