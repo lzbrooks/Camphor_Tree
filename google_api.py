@@ -117,9 +117,7 @@ class GMailMessage:
         json_push_message = json.loads(push_message)
         history_id = json_push_message['historyId']
         print("New GMail Push HistoryId: " + str(history_id))
-        query_params = {'startHistoryId': str(history_id),
-                        'labelId': 'INBOX',
-                        'historyTypes': ['messageAdded']}
+        query_params = {'startHistoryId': str(history_id)}
         response = requests.get(self.gmail_history_endpoint, headers=self.api_headers, params=query_params)
         print(response.json())
         if 'history' in response.json():
