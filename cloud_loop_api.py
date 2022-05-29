@@ -30,12 +30,15 @@ class CloudLoopMessage:
         self.message = None
         # Hex Encoded Message
         if hex_message:
+            print("Hex Message Processing...")
             self.hex_message = hex_message
             self.decoded_message = None
             self.decode_hex_message()
             self.split_recipient()
+            print("Hex Message Processed")
         # Message to be Hex Encoded
         if message_to_encode:
+            print("Message Encoding...")
             self.auth_token = Config.get_cloud_loop_auth_token()
             self.hardware_id = Config.get_rock_block_id()
             # TODO: handle list
@@ -47,6 +50,7 @@ class CloudLoopMessage:
             self.message_subject = message_subject
             # TODO: handle list of message_to_encode in for loop
             self.payload = self.get_payload()
+            print("Message Encoded")
 
     def decode_hex_message(self):
         # From JSON payload hex string to bytes

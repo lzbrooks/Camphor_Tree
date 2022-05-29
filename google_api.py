@@ -34,6 +34,7 @@ class GMailMessage:
     def __init__(self, google_client_id=None, google_client_secret=None,
                  message_to=None, message_from=None, message_subject=None, message_text=None):
 
+        print("GMail Message Processing...")
         # Google Client ID
         if google_client_id is None:
             self.google_client_id = Config.get_google_id()
@@ -81,8 +82,10 @@ class GMailMessage:
             'Accept': 'application / json',
             'Content-Type': 'application/json'
         }
+        print("GMail Message Processed")
 
     def get_auth_token(self):
+        print("Getting GMail Auth Token...")
         url = "https://oauth2.googleapis.com/token"
         data = {
             'client_id': self.google_client_id,
@@ -93,6 +96,7 @@ class GMailMessage:
         r = requests.post(url, json=data)
         key = r.json()['access_token']
         self.auth_token = key
+        print("GMail Auth Token Attained")
 
     def gmail_create_message(self):
         if self.message_to:
@@ -124,10 +128,14 @@ class GMailMessage:
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
         response = requests.get(get_message_endpoint, headers=self.api_headers)
+        print("GMail Message Attained by ID")
         message_from = None
         message_subject = None
         message_text = None
         # TODO: check labelIds for DRAFT or SENT
+        print("GMail Message JSON:")
+        print(response.json())
+        print(response.json().keys())
         if 'payload' in response.json() and len(response.json()['labelIds']) == 1:
             message_payload = response.json()['payload']
             for header in message_payload['headers']:
@@ -145,6 +153,10 @@ class GMailMessage:
                         message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
                     # TODO: if size bigger and from whitelist, send in multiple messages instead
                     # TODO: split body into list for message_text
+        print("GMail Message Dissected")
+        print(message_from)
+        print(message_subject)
+        print(message_text)
         return message_from, message_subject, message_text
 
     def gmail_re_watch(self):

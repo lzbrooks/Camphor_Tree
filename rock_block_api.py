@@ -14,18 +14,18 @@ from cloud_loop_api import CloudLoopMessage
 
 class RockBlockAPI:
     def __init__(self):
+        print("RockBLOCK Processing...")
         uart = serial.Serial("/dev/serial0", 19200)
         self.rock_block = RockBlock(uart)
+        print("RockBLOCK Processed")
 
     def talk_to_rock_block(self):
         print("Talking to satellite...")
         status = self.rock_block.satellite_transfer()
-        retry = 0
         while status[0] > 8:
             time.sleep(10)
             status = self.rock_block.satellite_transfer()
-            print(retry, status)
-            retry += 1
+            print(status)
         print("\nDONE.")
         return status
 

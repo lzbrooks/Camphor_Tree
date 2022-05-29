@@ -38,7 +38,7 @@ def console():
         send_status = 'Send Failure'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if request.is_json and "imei" in request.json and request.json['imei'] == Config.get_imei():
-        print("POST CloudLoop Message Received")
+        print("POST CloudLoop Ping Received")
         message_from_cloud_loop = CloudLoopMessage(hex_message=request.json['data'])
         gmail_message = GMailMessage(message_to=message_from_cloud_loop.recipient_list,
                                      message_subject=message_from_cloud_loop.message_subject,
@@ -52,7 +52,6 @@ def console():
         message_for_cloud_loop.gmail_get_messages_from_push()
         for message in message_for_cloud_loop.new_gmail_messages:
             message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
-            print("POST GMail Message Processed")
             message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
                                                      message_subject=message_subject,
                                                      message_to_encode=message_text)
