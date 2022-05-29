@@ -1,5 +1,4 @@
 import re
-import struct
 
 import requests
 
@@ -41,14 +40,12 @@ class CloudLoopMessage:
             print("Message Encoding...")
             self.auth_token = Config.get_cloud_loop_auth_token()
             self.hardware_id = Config.get_rock_block_id()
-            # TODO: handle list
             self.message_to_encode = message_to_encode
             if isinstance(message_from, list):
                 self.message_from = message_from
             else:
                 self.message_from = [message_from]
             self.message_subject = message_subject
-            # TODO: handle list of message_to_encode in for loop
             self.payload = self.get_payload()
             print("Message Encoded")
 
@@ -120,24 +117,34 @@ class CloudLoopMessage:
                 return contact_number
 
     def get_payload(self):
-        # TODO: for loop over messages to encode (only message_text differ, increment subject line counter)
-        # TODO: make sure message chunks are smaller than max - take into account counter text
-        # TODO: return list of payloads
-        payload = ""
+        max_chunk_size = Config.get_max_message_size()
+        total_message_length = len(self.message_to_encode)
+        if total_message_length > max_chunk_size:
+            self.message_to_encode = [self.message_to_encode[i: i + max_chunk_size]
+                                      for i in range(0, total_message_length, max_chunk_size)]
+        else:
+            self.message_to_encode = [self.message_to_encode]
         self.message_from = CloudLoopMessage.email_to_contact_number(self.message_from)
-        for sender in self.message_from:
-            payload += sender + ","
-        payload += self.message_subject + "," + self.message_to_encode
-        payload = payload.replace('\r', '').replace('\n', '')
-        return payload.encode()
+        payload_list = []
+        for part_number, message_text in enumerate(self.message_to_encode):
+            payload = ""
+            for sender in self.message_from:
+                payload += sender + ","
+            payload += self.message_subject
+            payload += " (" + str(part_number + 1) + "/" + str(len(self.message_to_encode)) + ")" + ","
+            payload += message_text
+            payload = payload.replace('\r', '').replace('\n', '')
+            payload.encode()
+            payload_list[part_number] = payload
+        return payload_list
 
     def send_cloud_loop_message(self):
-        # TODO: for loop over payloads
         if self.message_to_encode:
-            print("Sending CloudLoop Message")
-            print(self.payload.hex())
-            send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
-            url = send_message_api + self.hardware_id + "&payload=" + self.payload.hex() + "&token=" + self.auth_token
-            headers = {"Accept": "application/json"}
-            return requests.get(url, headers=headers)
+            for payload in self.payload:
+                print("Sending CloudLoop Message")
+                send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
+                url = send_message_api + self.hardware_id + \
+                      "&payload=" + payload.hex() + "&token=" + self.auth_token
+                headers = {"Accept": "application/json"}
+                requests.get(url, headers=headers)
         print("No CloudLoop Message to Send")

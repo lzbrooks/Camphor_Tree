@@ -134,7 +134,6 @@ class GMailMessage:
         message_from = None
         message_subject = None
         message_text = None
-        # TODO: check labelIds for DRAFT or SENT
         send_message = True
         if 'DRAFT' in response.json()['labelIds'] or 'SENT' in response.json()['labelIds']:
             send_message = False
@@ -153,12 +152,10 @@ class GMailMessage:
                     size_in_bytes = message_part['body']['size']
                     if size_in_bytes < int(self.max_message_size):
                         message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
-                    # TODO: if size bigger and from whitelist, send in multiple messages instead
-                    # TODO: split body into list for message_text
+                    if size_in_bytes > int(self.max_message_size) \
+                            and message_from in Config.get_whitelist().values():
+                        message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
         print("GMail Message Dissected")
-        print(message_from)
-        print(message_subject)
-        print(message_text)
         return message_from, message_subject, message_text
 
     def gmail_re_watch(self):
@@ -175,7 +172,6 @@ class GMailMessage:
             print("Gmail Re-Watch Failure")
 
 
-# TODO: cron every day
 if __name__ == "__main__":
     gmail_re_watch = GMailMessage()
     gmail_re_watch.gmail_re_watch()
