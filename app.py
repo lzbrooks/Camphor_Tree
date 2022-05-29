@@ -47,7 +47,7 @@ def console():
         print("POST GMail Message Sent")
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
-        print("POST GMail Message Received")
+        print("POST GMail Ping Received")
         message_for_cloud_loop = GMailMessage()
         message_for_cloud_loop.gmail_get_messages_from_push()
         for message in message_for_cloud_loop.new_gmail_messages:

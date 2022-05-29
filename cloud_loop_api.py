@@ -1,4 +1,5 @@
 import re
+import struct
 
 import requests
 
@@ -37,19 +38,24 @@ class CloudLoopMessage:
         if message_to_encode:
             self.auth_token = Config.get_cloud_loop_auth_token()
             self.hardware_id = Config.get_rock_block_id()
+            # TODO: handle list
             self.message_to_encode = message_to_encode
             if isinstance(message_from, list):
                 self.message_from = message_from
             else:
                 self.message_from = [message_from]
             self.message_subject = message_subject
+            # TODO: handle list of message_to_encode in for loop
             self.payload = self.get_payload()
 
     def decode_hex_message(self):
-        if isinstance(self.hex_message, bytes):
-            self.decoded_message = self.hex_message.decode('ascii')
-        else:
-            self.decoded_message = bytes.fromhex(self.hex_message).decode('ascii')
+        # From JSON payload hex string to bytes
+        if not isinstance(self.hex_message, bytes):
+            self.hex_message = bytes.fromhex(self.hex_message)
+        # TODO: handle the encoded struct
+        hex_length = struct.unpack("i", self.hex_message[0:4])[0]
+        unpacked_struct = struct.unpack("{}s".format(hex_length), self.hex_message[4:])[0]
+        self.decoded_message = unpacked_struct.decode()
 
     def split_recipient(self):
         message_parts = self.decoded_message.split(",")
@@ -112,14 +118,22 @@ class CloudLoopMessage:
                 return contact_number
 
     def get_payload(self):
+        # TODO: for loop over messages to encode (only message_text differ, increment subject line counter)
+        # TODO: make sure message chunks are smaller than max - take into account counter text
+        # TODO: return list of payloads
         payload = ""
         self.message_from = CloudLoopMessage.email_to_contact_number(self.message_from)
         for sender in self.message_from:
             payload += sender + ","
         payload += self.message_subject + "," + self.message_to_encode
-        return payload.encode()
+        # TODO: encode into struct
+        payload_length = len(payload)
+        payload_struct = struct.pack("i", payload_length)
+        payload_struct += struct.pack("{}s".format(payload_length), payload.encode())
+        return payload_struct
 
     def send_cloud_loop_message(self):
+        # TODO: for loop over payloads
         if self.message_to_encode:
             send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
             url = send_message_api + self.hardware_id + "&payload=" + self.payload.hex() + "&token=" + self.auth_token
