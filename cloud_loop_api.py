@@ -58,8 +58,6 @@ class CloudLoopMessage:
 
     def split_recipient(self):
         message_parts = self.decoded_message.split(",")
-        print("message parts")
-        print(message_parts)
         info_subjects = [subject for subject in message_parts if re.search(r'Info \(./.\)', subject)]
         urgent_subjects = [subject for subject in message_parts if re.search(r'Urgent \(./.\)', subject)]
         emergency_subjects = [subject for subject in message_parts if re.search(r'Emergency \(./.\)', subject)]
