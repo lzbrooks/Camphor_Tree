@@ -59,7 +59,7 @@ if __name__ == "__main__":
         message_to_write = message_from_rock_block.recipient_list
         message_to_write = message_to_write + [message_from_rock_block.message_subject,
                                                message_from_rock_block.message]
-        message_file_name = "" + str(datetime.now()) + ".txt"
+        message_file_name = "Inbox/" + str(datetime.now().strftime("%Y_%m_%d__%H_%M_%S")) + ".txt"
         with open(message_file_name, "w") as file:
             file.writelines(message_to_write)
         print("Message Witten To: " + message_file_name)
