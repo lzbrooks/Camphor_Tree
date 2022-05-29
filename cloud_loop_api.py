@@ -142,10 +142,11 @@ class CloudLoopMessage:
         if self.message_to_encode:
             for payload_part_number, payload in enumerate(self.payload_list):
                 print("Sending CloudLoop Message")
-                print("Sending part " + str(payload_part_number) + " of " + str(len(self.payload_list)))
+                print("Sending part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
                 send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
                 url = send_message_api + self.hardware_id + \
                       "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
                 headers = {"Accept": "application/json"}
                 requests.get(url, headers=headers)
-        print("No CloudLoop Message to Send")
+        else:
+            print("No CloudLoop Message to Send")
