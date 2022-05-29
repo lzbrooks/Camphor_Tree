@@ -2,6 +2,7 @@
 *.json
 *.ini
 .idea/
+Inbox/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
