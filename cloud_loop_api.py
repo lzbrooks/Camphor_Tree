@@ -117,7 +117,7 @@ class CloudLoopMessage:
                 return contact_number
 
     def get_payload(self):
-        max_chunk_size = Config.get_max_message_size()
+        max_chunk_size = int(Config.get_max_message_size())
         total_message_length = len(self.message_to_encode)
         if total_message_length > max_chunk_size:
             self.message_to_encode = [self.message_to_encode[i: i + max_chunk_size]

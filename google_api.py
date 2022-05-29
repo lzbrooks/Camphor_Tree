@@ -153,8 +153,6 @@ class GMailMessage:
                     print("Inspecting Message Size")
                     print("Max Message Size Allowed: " + self.max_message_size)
                     print("Current Message Size: " + str(size_in_bytes))
-                    print("Current Whitelist:")
-                    print(Config.get_whitelist().values())
                     print("Message From: " + message_from)
                     if size_in_bytes < int(self.max_message_size):
                         message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
