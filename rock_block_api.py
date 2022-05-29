@@ -51,6 +51,9 @@ if __name__ == "__main__":
         print("Message Received")
     print("Size in bytes of message: " + str(status_of_mailbox[4]))
     print("Number of Messages in Queue: " + str(status_of_mailbox[5]))
+    # TODO: buffer is not finished transferring
+    # struct.error: unpack requires a buffer of 11 bytes
+    time.sleep(10)
     hex_data = rock_block_ping.rock_block.data_in
     print(hex_data)
     if hex_data:
