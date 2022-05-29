@@ -124,6 +124,7 @@ class CloudLoopMessage:
                                       for i in range(0, total_message_length, max_chunk_size)]
         else:
             self.message_to_encode = [self.message_to_encode]
+        print("Number of Message Chunks: " + str(len(self.message_to_encode)))
         self.message_from = CloudLoopMessage.email_to_contact_number(self.message_from)
         payload_list = []
         for part_number, message_text in enumerate(self.message_to_encode):
@@ -135,7 +136,7 @@ class CloudLoopMessage:
             payload += message_text
             payload = payload.replace('\r', '').replace('\n', '')
             payload.encode()
-            payload_list[part_number] = payload
+            payload_list.append(payload)
         return payload_list
 
     def send_cloud_loop_message(self):
