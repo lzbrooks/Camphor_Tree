@@ -31,7 +31,7 @@ def console():
                                                   message_subject=email_form.info_level.data,
                                                   message_to_encode=email_form.message_body.data)
             rock_block_api = RockBlockAPI()
-            rock_block_api.send_data_out(rock_block_message.payload)
+            rock_block_api.send_data_out(rock_block_message.payload_list)
         send_status = 'Send Success'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and not email_form.validate():

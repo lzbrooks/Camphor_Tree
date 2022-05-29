@@ -23,7 +23,7 @@ class CloudLoopMessage:
         self.hardware_id = None
         self.message_to_encode = None
         self.message_from = None
-        self.payload = None
+        self.payload_list = None
         self.recipient_list = []
         self.message_subject = None
         self.message = None
@@ -46,7 +46,7 @@ class CloudLoopMessage:
             else:
                 self.message_from = [message_from]
             self.message_subject = message_subject
-            self.payload = self.get_payload()
+            self.payload_list = self.get_payload()
             print("Message Encoded")
 
     def decode_hex_message(self):
@@ -141,11 +141,13 @@ class CloudLoopMessage:
 
     def send_cloud_loop_message(self):
         if self.message_to_encode:
-            for payload in self.payload:
+            for payload_part_number, payload in enumerate(self.payload_list):
                 print("Sending CloudLoop Message")
+                print("Sending part " + str(payload_part_number) + " of " + str(len(self.payload_list)))
+                print(payload)
                 send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
                 url = send_message_api + self.hardware_id + \
-                      "&payload=" + payload.hex() + "&token=" + self.auth_token
+                      "&payload=" + bytes(payload).hex() + "&token=" + self.auth_token
                 headers = {"Accept": "application/json"}
                 requests.get(url, headers=headers)
         print("No CloudLoop Message to Send")
