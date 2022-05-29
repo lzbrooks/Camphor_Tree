@@ -128,7 +128,7 @@ class GMailMessage:
         message_subject = None
         message_text = None
         # TODO: check labelIds for DRAFT or SENT
-        if 'payload' in response.json():
+        if 'payload' in response.json() and len(response.json()['labelIds']) == 1:
             message_payload = response.json()['payload']
             for header in message_payload['headers']:
                 if header['name'] == 'From':
