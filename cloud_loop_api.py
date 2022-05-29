@@ -57,7 +57,6 @@ class CloudLoopMessage:
         if not isinstance(self.hex_message, bytes):
             print("Changing Hex to Bytes")
             self.hex_message = bytes.fromhex(self.hex_message)
-        # TODO: handle the encoded struct
         hex_length = struct.unpack("i", self.hex_message[0:4])[0]
         print("Message Size: " + str(hex_length))
         unpacked_struct = struct.unpack("{}s".format(hex_length), self.hex_message[4:])[0]
@@ -140,9 +139,9 @@ class CloudLoopMessage:
         for sender in self.message_from:
             payload += sender + ","
         payload += self.message_subject + "," + self.message_to_encode
+        payload = payload.replace('\r', '').replace('\n', '')
         print("Payload:")
         print(payload)
-        # TODO: encode into struct
         payload_length = len(payload)
         print("Payload Size:")
         print(payload_length)
