@@ -51,14 +51,18 @@ class CloudLoopMessage:
     def decode_hex_message(self):
         # From JSON payload hex string to bytes
         if not isinstance(self.hex_message, bytes):
+            print("Changing Hex to Bytes")
             self.hex_message = bytes.fromhex(self.hex_message)
         # TODO: handle the encoded struct
         hex_length = struct.unpack("i", self.hex_message[0:4])[0]
+        print("Message Size: " + str(hex_length))
         unpacked_struct = struct.unpack("{}s".format(hex_length), self.hex_message[4:])[0]
         self.decoded_message = unpacked_struct.decode()
 
     def split_recipient(self):
         message_parts = self.decoded_message.split(",")
+        print("Decoded Message:")
+        print(message_parts)
         message_subject = None
         if 'Info' in message_parts:
             message_subject = 'Info'
@@ -121,20 +125,33 @@ class CloudLoopMessage:
         # TODO: for loop over messages to encode (only message_text differ, increment subject line counter)
         # TODO: make sure message chunks are smaller than max - take into account counter text
         # TODO: return list of payloads
+        print("Message From:")
+        print(self.message_from)
+        print("Message Subject:")
+        print(self.message_subject)
+        print("Message Body:")
+        print(self.message_to_encode)
         payload = ""
         self.message_from = CloudLoopMessage.email_to_contact_number(self.message_from)
         for sender in self.message_from:
             payload += sender + ","
         payload += self.message_subject + "," + self.message_to_encode
+        print("Payload:")
+        print(payload)
         # TODO: encode into struct
         payload_length = len(payload)
+        print("Payload Size:")
+        print(payload_length)
         payload_struct = struct.pack("i", payload_length)
+        print(payload_struct)
         payload_struct += struct.pack("{}s".format(payload_length), payload.encode())
+        print(payload_struct)
         return payload_struct
 
     def send_cloud_loop_message(self):
         # TODO: for loop over payloads
         if self.message_to_encode:
+            print(self.payload.hex())
             send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
             url = send_message_api + self.hardware_id + "&payload=" + self.payload.hex() + "&token=" + self.auth_token
             headers = {"Accept": "application/json"}

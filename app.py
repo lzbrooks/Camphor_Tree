@@ -56,7 +56,7 @@ def console():
             message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
                                                      message_subject=message_subject,
                                                      message_to_encode=message_text)
-            message_to_cloud_loop.send_cloud_loop_message()
+            print(message_to_cloud_loop.send_cloud_loop_message())
             print("POST CloudLoop Message Sent")
         return "Success", 200
     return render_template('login.html', form=login_form, server_option=server_option)
