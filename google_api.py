@@ -141,7 +141,7 @@ class GMailMessage:
             message_payload = response.json()['payload']
             for header in message_payload['headers']:
                 if header['name'] == 'From':
-                    message_from = re.findall(r'(?<=<).*?(?=>)', header['value'])
+                    message_from = re.search(r'(?<=<).*?(?=>)', header['value']).group()
                 if header['name'] == 'Subject':
                     message_subject = header['value']
             message_parts = message_payload['parts']
@@ -150,6 +150,12 @@ class GMailMessage:
                         and 'size' in message_part['body'] \
                         and 'data' in message_part['body']:
                     size_in_bytes = message_part['body']['size']
+                    print("Inspecting Message Size")
+                    print("Max Message Size Allowed: " + self.max_message_size)
+                    print("Current Message Size: " + str(size_in_bytes))
+                    print("Current Whitelist:")
+                    print(Config.get_whitelist().values())
+                    print("Message From: " + message_from)
                     if size_in_bytes < int(self.max_message_size):
                         message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
                     if size_in_bytes > int(self.max_message_size) \
