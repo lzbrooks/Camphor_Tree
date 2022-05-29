@@ -112,12 +112,14 @@ class GMailMessage:
             self.gmail_message = create_message
 
     def post_message(self):
-        response = requests.post(self.gmail_endpoint, headers=self.api_headers, json=self.gmail_message)
-        return response
+        if self.gmail_message:
+            print("Sending GMail Message")
+            return requests.post(self.gmail_endpoint, headers=self.api_headers, json=self.gmail_message)
+        print("No GMail Message to Send")
 
     def send_gmail_message(self):
         self.gmail_create_message()
-        return self.post_message()
+        self.post_message()
 
     def gmail_get_messages_from_push(self):
         query_params = {'maxResults': str(1)}

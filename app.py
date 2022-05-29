@@ -44,7 +44,7 @@ def console():
                                      message_subject=message_from_cloud_loop.message_subject,
                                      message_text=message_from_cloud_loop.message)
         gmail_message.send_gmail_message()
-        print("POST GMail Message Sent")
+        print("POST GMail Message Handled")
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
         print("POST GMail Ping Received")
@@ -55,7 +55,7 @@ def console():
             message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
                                                      message_subject=message_subject,
                                                      message_to_encode=message_text)
-            print(message_to_cloud_loop.send_cloud_loop_message())
-            print("POST CloudLoop Message Sent")
+            message_to_cloud_loop.send_cloud_loop_message()
+            print("POST CloudLoop Message Handled")
         return "Success", 200
     return render_template('login.html', form=login_form, server_option=server_option)
