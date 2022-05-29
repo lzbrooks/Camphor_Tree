@@ -57,16 +57,10 @@ class CloudLoopMessage:
         if not isinstance(self.hex_message, bytes):
             print("Changing Hex to Bytes")
             self.hex_message = bytes.fromhex(self.hex_message)
-        # hex_length = struct.unpack("i", self.hex_message[0:4])[0]
-        # print("Message Size: " + str(hex_length))
-        # unpacked_struct = struct.unpack("{}s".format(hex_length), self.hex_message[4:])[0]
-        # self.decoded_message = unpacked_struct.decode()
         self.decoded_message = self.hex_message.decode()
 
     def split_recipient(self):
         message_parts = self.decoded_message.split(",")
-        print("Decoded Message:")
-        print(message_parts)
         message_subject = None
         if 'Info' in message_parts:
             message_subject = 'Info'
@@ -107,7 +101,6 @@ class CloudLoopMessage:
     @staticmethod
     def get_email_for_contact_number(contact):
         contacts = Config.get_whitelist()
-        print(contacts)
         for contact_number, email_address in contacts.items():
             if contact_number == contact:
                 return email_address
@@ -130,28 +123,12 @@ class CloudLoopMessage:
         # TODO: for loop over messages to encode (only message_text differ, increment subject line counter)
         # TODO: make sure message chunks are smaller than max - take into account counter text
         # TODO: return list of payloads
-        print("Message From:")
-        print(self.message_from)
-        print("Message Subject:")
-        print(self.message_subject)
-        print("Message Body:")
-        print(self.message_to_encode)
         payload = ""
         self.message_from = CloudLoopMessage.email_to_contact_number(self.message_from)
         for sender in self.message_from:
             payload += sender + ","
         payload += self.message_subject + "," + self.message_to_encode
         payload = payload.replace('\r', '').replace('\n', '')
-        print("Payload:")
-        print(payload)
-        # payload_length = len(payload)
-        # print("Payload Size:")
-        # print(payload_length)
-        # payload_struct = struct.pack("i", payload_length)
-        # print(payload_struct)
-        # payload_struct += struct.pack("{}s".format(payload_length), payload.encode())
-        # print(payload_struct)
-        # return payload_struct
         return payload.encode()
 
     def send_cloud_loop_message(self):

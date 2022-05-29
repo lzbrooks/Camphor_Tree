@@ -6,6 +6,7 @@ from adafruit_rockblock import RockBlock
 
 from cloud_loop_api import CloudLoopMessage
 
+
 # Reqs:
 # sudo pip3 install --upgrade adafruit-python-shell
 # pip3 install Adafruit-Blinka
@@ -56,10 +57,9 @@ if __name__ == "__main__":
     print(hex_data)
     if hex_data:
         message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
-        message_to_write = [message_from_rock_block.recipient_list, message_from_rock_block.message_subject,
-                            message_from_rock_block.message]
-        print("Message From:")
-        print(message_from_rock_block.recipient_list)
+        message_to_write = message_from_rock_block.recipient_list
+        message_to_write = message_to_write + [message_from_rock_block.message_subject,
+                                               message_from_rock_block.message]
         message_file_name = "" + str(datetime.now()) + ".txt"
         with open(message_file_name, "w") as file:
             file.writelines(message_to_write)
