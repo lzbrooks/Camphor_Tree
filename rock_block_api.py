@@ -37,8 +37,9 @@ class RockBlockAPI:
         self.rock_block.data_out = data
 
     def send_data_out(self, data):
-        self.set_data_out(data)
-        self.talk_to_rock_block()
+        for message in data:
+            self.set_data_out(message.encode())
+            self.talk_to_rock_block()
 
 
 if __name__ == "__main__":

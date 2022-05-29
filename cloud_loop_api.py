@@ -135,7 +135,6 @@ class CloudLoopMessage:
             payload += " (" + str(part_number + 1) + "/" + str(len(self.message_to_encode)) + ")" + ","
             payload += message_text
             payload = payload.replace('\r', '').replace('\n', '')
-            payload.encode()
             payload_list.append(payload)
         return payload_list
 
@@ -144,10 +143,9 @@ class CloudLoopMessage:
             for payload_part_number, payload in enumerate(self.payload_list):
                 print("Sending CloudLoop Message")
                 print("Sending part " + str(payload_part_number) + " of " + str(len(self.payload_list)))
-                print(payload)
                 send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
                 url = send_message_api + self.hardware_id + \
-                      "&payload=" + bytes(payload).hex() + "&token=" + self.auth_token
+                      "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
                 headers = {"Accept": "application/json"}
                 requests.get(url, headers=headers)
         print("No CloudLoop Message to Send")

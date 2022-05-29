@@ -21,15 +21,12 @@ def console():
         send_status = 'Console'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and email_form.validate():
+        rock_block_message = CloudLoopMessage(message_from=email_form.email.data,
+                                              message_subject=email_form.info_level.data,
+                                              message_to_encode=email_form.message_body.data)
         if server_option == 'Satsuki':
-            cloud_loop_message = CloudLoopMessage(message_from=email_form.email.data,
-                                                  message_subject=email_form.info_level.data,
-                                                  message_to_encode=email_form.message_body.data)
-            cloud_loop_message.send_cloud_loop_message()
+            rock_block_message.send_cloud_loop_message()
         if server_option == 'Mei':
-            rock_block_message = CloudLoopMessage(message_from=email_form.email.data,
-                                                  message_subject=email_form.info_level.data,
-                                                  message_to_encode=email_form.message_body.data)
             rock_block_api = RockBlockAPI()
             rock_block_api.send_data_out(rock_block_message.payload_list)
         send_status = 'Send Success'
