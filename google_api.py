@@ -136,7 +136,7 @@ class GMailMessage:
         send_message = True
         if 'DRAFT' in response.json()['labelIds'] or 'SENT' in response.json()['labelIds']:
             send_message = False
-        if 'payload' in response.json() and 'DRAFT' in send_message:
+        if 'payload' in response.json() and send_message:
             message_payload = response.json()['payload']
             for header in message_payload['headers']:
                 if header['name'] == 'From':
