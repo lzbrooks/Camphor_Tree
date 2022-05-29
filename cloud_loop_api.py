@@ -58,6 +58,7 @@ class CloudLoopMessage:
 
     def split_recipient(self):
         message_parts = self.decoded_message.split(",")
+        print(message_parts)
         message_subject = None
         if 'Info' in message_parts:
             message_subject = 'Info'
@@ -74,6 +75,7 @@ class CloudLoopMessage:
         else:
             recipient_list = message_parts
             message_text_list = message_parts
+        print(recipient_list)
         recipient_list_filtered = CloudLoopMessage.get_recipient_list(recipient_list)
         recipient_list_mapped = CloudLoopMessage.contact_number_to_email(recipient_list_filtered)
         if len(recipient_list_mapped) < len(recipient_list):
@@ -82,6 +84,9 @@ class CloudLoopMessage:
         self.recipient_list = recipient_list_mapped
         self.message_subject = message_subject
         self.message = message_text
+        print(self.recipient_list)
+        print(self.message_subject)
+        print(self.message)
 
     @staticmethod
     def get_recipient_list(message_parts):
