@@ -60,30 +60,26 @@ class CloudLoopMessage:
         message_parts = self.decoded_message.split(",")
         print("message parts")
         print(message_parts)
-        message_subject = None
-        if 'Info' in message_parts:
-            message_subject = 'Info'
-            recipient_list = message_parts[:message_parts.index('Info')]
-            message_text_list = message_parts[message_parts.index('Info') + 1:]
-        elif 'Urgent' in message_parts:
-            message_subject = 'Urgent'
-            recipient_list = message_parts[:message_parts.index('Urgent')]
-            message_text_list = message_parts[message_parts.index('Urgent') + 1:]
-        elif 'Emergency' in message_parts:
-            message_subject = 'Emergency'
-            recipient_list = message_parts[:message_parts.index('Emergency')]
-            message_text_list = message_parts[message_parts.index('Emergency') + 1:]
+        info_subjects = [subject for subject in message_parts if re.search(r'Info \(./.\)', subject)]
+        urgent_subjects = [subject for subject in message_parts if re.search(r'Urgent \(./.\)', subject)]
+        emergency_subjects = [subject for subject in message_parts if re.search(r'Emergency \(./.\)', subject)]
+        if info_subjects:
+            message_subject = info_subjects[0]
+        elif urgent_subjects:
+            message_subject = urgent_subjects[0]
+        elif emergency_subjects:
+            message_subject = emergency_subjects[0]
         else:
+            message_subject = None
+        if message_subject:
+            recipient_list = message_parts[:message_parts.index(message_subject)]
+            message_text_list = message_parts[message_parts.index(message_subject) + 1:]
+        else:
+            message_subject = ""
             recipient_list = message_parts
             message_text_list = message_parts
-        print("raw senders")
-        print(recipient_list)
         recipient_list_filtered = CloudLoopMessage.get_recipient_list(recipient_list)
-        print("filtered for email or num")
-        print(recipient_list_filtered)
         recipient_list_mapped = CloudLoopMessage.contact_number_to_email(recipient_list_filtered)
-        print("mapped num to email")
-        print(recipient_list_mapped)
         if len(recipient_list_mapped) < len(recipient_list):
             message_text_list = message_parts
         message_text = "".join(message_text_list)
