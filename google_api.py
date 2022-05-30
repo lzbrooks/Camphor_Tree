@@ -94,6 +94,7 @@ class GMailMessage:
             'grant_type': 'refresh_token'
         }
         r = requests.post(url, json=data)
+        print(r.json())
         key = r.json()['access_token']
         self.auth_token = key
         print("GMail Auth Token Attained")
