@@ -1,4 +1,6 @@
+import base64
 import configparser
+import json
 
 from flask import Flask, render_template, request
 
@@ -47,15 +49,16 @@ def console():
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
         print("POST GMail Ping Received")
-        push_id = request.json['message']['messageId']
+        # push_id = request.json['message']['messageId']
+        push_id = json.loads(base64.urlsafe_b64decode(request.json['message']['data']).decode('utf-8'))['historyId']
         print("New Push ID: " + str(push_id))
-        config_file_name = "messageId.ini"
+        config_file_name = "historyId.ini"
         config_file = configparser.ConfigParser()
         if config_file.read(config_file_name):
             config_file.read(config_file_name)
             current_push_id = config_file["GMailMessageId"]["current"]
-            print("Saved Push ID: " + str(current_push_id))
-            if push_id != current_push_id:
+            print("Old Push ID: " + str(current_push_id))
+            if int(push_id) != int(current_push_id):
                 config_file["GMailMessageId"]["current"] = push_id
                 with open(config_file_name, "w") as file_object:
                     config_file.write(file_object)
