@@ -47,12 +47,12 @@ def console():
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
         print("POST GMail Ping Received")
-        print(request.json)
-        push_id = request.json['messageId']
+        push_id = request.json['message']['messageId']
+        print("New Push ID: " + str(push_id))
         config_file = configparser.ConfigParser()
         if config_file.read("historyId.ini"):
             current_push_id = config_file["GMailMessageId"]["current"]
-            print("Current Push ID: " + str(current_push_id))
+            print("Saved Push ID: " + str(current_push_id))
             if push_id != current_push_id:
                 config_file["GMailMessageId"]["current"] = push_id
                 with open("messageId.ini", "w") as file_object:
