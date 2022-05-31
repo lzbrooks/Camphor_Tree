@@ -153,7 +153,7 @@ class CloudLoopMessage:
                       "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
                 headers = {"Accept": "application/json"}
                 print(url)
-                # requests.get(url, headers=headers)
+                requests.get(url, headers=headers)
                 print(payload)
                 print("Sent part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
         else:
