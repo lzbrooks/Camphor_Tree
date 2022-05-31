@@ -90,7 +90,6 @@ class GMailMessage:
         }
 
     def get_auth_code_url(self):
-        # TODO: test
         print("Getting GMail Auth Code URL...")
         scope = "https%3A//www.googleapis.com/auth/gmail.modify"
         access_type = "offline"
@@ -106,7 +105,6 @@ class GMailMessage:
         return authorization_url
 
     def get_refresh_token(self, auth_code):
-        # TODO: test
         print("Getting GMail Refresh Token...")
         url = "https://oauth2.googleapis.com/token"
         headers = {
@@ -127,41 +125,37 @@ class GMailMessage:
 
     @staticmethod
     def write_auth_config(request_json, auth_expiry_format):
-        # TODO: test
         auth_expiry_date_time = datetime.now() + timedelta(seconds=request_json['expires_in'])
         config_file = configparser.ConfigParser()
         config_file["AuthConfig"] = {
-            "auth_token": request_json['access_token'],
-            "auth_expiry": auth_expiry_date_time.strftime(auth_expiry_format)
+            "token": request_json['access_token'],
+            "expires": auth_expiry_date_time.strftime(auth_expiry_format)
         }
         with open("configurations.ini", "w") as file_object:
             config_file.write(file_object)
 
     @staticmethod
     def read_auth_config(auth_expiry_format):
-        # TODO: test
         config_file = configparser.ConfigParser()
         if config_file.read("configurations.ini"):
             config_file.read("configurations.ini")
             return {
                 "AuthConfig": {
-                    "auth_token": config_file["AuthConfig"]["auth_token"],
-                    "auth_expiry": datetime.strptime(config_file["AuthConfig"]["auth_expiry"],
+                    "token": config_file["AuthConfig"]["token"],
+                    "expires": datetime.strptime(config_file["AuthConfig"]["expires"],
                                                      auth_expiry_format)
                 }
             }
 
     def check_auth_token_expired(self):
-        # TODO: test
         print("Checking GMail Auth Token Expiry...")
         config_file = self.read_auth_config(self.auth_expiry_format)
-        if config_file and config_file["AuthConfig"]["auth_expiry"] < datetime.now():
+        if config_file and config_file["AuthConfig"]["expires"] > datetime.now():
             return False
         print("GMail Auth Token Expired")
         return True
 
     def get_auth_token(self):
-        # TODO: test
         url = "https://oauth2.googleapis.com/token"
         data = {
             'client_id': self.google_client_id,
@@ -172,13 +166,12 @@ class GMailMessage:
         if self.check_auth_token_expired():
             print("Getting New GMail Auth Token...")
             response = requests.post(url, json=data)
-            print(response.json())
             if 'access_token' in response.json() and response.json()['access_token']:
                 self.write_auth_config(response.json(), self.auth_expiry_format)
                 self.auth_token = response.json()['access_token']
         else:
             auth_config = self.read_auth_config(self.auth_expiry_format)
-            self.auth_token = auth_config["AuthConfig"]["auth_token"]
+            self.auth_token = auth_config["AuthConfig"]["token"]
         print("GMail Auth Token Attained")
 
     def gmail_create_message(self):
