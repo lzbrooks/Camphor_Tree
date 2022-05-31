@@ -1,3 +1,5 @@
+import configparser
+
 from flask import Flask, render_template, request
 
 from EmailForm import EmailForm
@@ -45,6 +47,18 @@ def console():
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
         print("POST GMail Ping Received")
+        print(request.json)
+        push_id = request.json['messageId']
+        config_file = configparser.ConfigParser()
+        if config_file.read("historyId.ini"):
+            current_push_id = config_file["GMailMessageId"]["current"]
+            print("Current Push ID: " + str(current_push_id))
+            if push_id != current_push_id:
+                config_file["GMailMessageId"]["current"] = push_id
+                with open("messageId.ini", "w") as file_object:
+                    config_file.write(file_object)
+            else:
+                return "Bounce This One", 200
         message_for_cloud_loop = GMailMessage()
         message_for_cloud_loop.gmail_get_messages_from_push()
         for message in message_for_cloud_loop.new_gmail_messages:
