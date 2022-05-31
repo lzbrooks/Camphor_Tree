@@ -1,12 +1,14 @@
 import base64
+import configparser
 import re
+from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import requests as requests
 
 # If modifying these scopes, delete the file token.json.
-# SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+# SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
 # The file token.json stores the user's access and refresh tokens, and is
 # created automatically when the authorization flow completes for the first
@@ -71,21 +73,95 @@ class GMailMessage:
         self.max_message_size = Config.get_max_message_size()
 
         self.auth_token = None
-        self.get_auth_token()
+        self.auth_expiry_format = "%m/%d/%Y, %H:%M:%S"
         self.gmail_message = None
         self.gmail_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
         self.gmail_message_list_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
         self.gmail_get_message_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/"
         self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
-        self.api_headers = {
+        print("GMail Message Processed")
+
+    def get_api_headers(self):
+        self.get_auth_token()
+        return {
             'Authorization': f'Bearer {self.auth_token} ',
             'Accept': 'application / json',
             'Content-Type': 'application/json'
         }
-        print("GMail Message Processed")
+
+    def get_auth_code_url(self):
+        # TODO: test
+        print("Getting GMail Auth Code URL...")
+        scope = "https%3A//www.googleapis.com/auth/gmail.modify"
+        access_type = "offline"
+        response_code = "code"
+        redirect_uri = "https%3A//localhost"
+        authorization_url = "https://accounts.google.com/o/oauth2/auth" + "?" + \
+                            "scope=" + scope + "&" + \
+                            "access_type=" + access_type + "&" + \
+                            "response_type=" + response_code + "&" + \
+                            "redirect_uri=" + redirect_uri + "&" + \
+                            "client_id=" + self.google_client_id
+        print("GMail Auth Code URL Attained")
+        return authorization_url
+
+    def get_refresh_token(self, auth_code):
+        # TODO: test
+        print("Getting GMail Refresh Token...")
+        url = "https://oauth2.googleapis.com/token"
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        data = {
+            'code': auth_code,
+            'client_id': self.google_client_id,
+            'client_secret': self.google_client_secret,
+            'redirect_uri': "https://localhost",
+            'grant_type': 'authorization_code'
+        }
+        response = requests.post(url, data=data, headers=headers)
+        print(response.json())
+        self.write_auth_config(response.json(), self.auth_expiry_format)
+        print("GMail Refresh Token Attained")
+        return response.json()['refresh_token']
+
+    @staticmethod
+    def write_auth_config(request_json, auth_expiry_format):
+        # TODO: test
+        auth_expiry_date_time = datetime.now() + timedelta(seconds=request_json['expires_in'])
+        config_file = configparser.ConfigParser()
+        config_file["AuthConfig"] = {
+            "auth_token": request_json['access_token'],
+            "auth_expiry": auth_expiry_date_time.strftime(auth_expiry_format)
+        }
+        with open("configurations.ini", "w") as file_object:
+            config_file.write(file_object)
+
+    @staticmethod
+    def read_auth_config(auth_expiry_format):
+        # TODO: test
+        config_file = configparser.ConfigParser()
+        if config_file.read("configurations.ini"):
+            config_file.read("configurations.ini")
+            return {
+                "AuthConfig": {
+                    "auth_token": config_file["AuthConfig"]["auth_token"],
+                    "auth_expiry": datetime.strptime(config_file["AuthConfig"]["auth_expiry"],
+                                                     auth_expiry_format)
+                }
+            }
+
+    def check_auth_token_expired(self):
+        # TODO: test
+        print("Checking GMail Auth Token Expiry...")
+        config_file = self.read_auth_config(self.auth_expiry_format)
+        if config_file and config_file["AuthConfig"]["auth_expiry"] < datetime.now():
+            return False
+        print("GMail Auth Token Expired")
+        return True
 
     def get_auth_token(self):
-        print("Getting GMail Auth Token...")
+        # TODO: test
         url = "https://oauth2.googleapis.com/token"
         data = {
             'client_id': self.google_client_id,
@@ -93,10 +169,16 @@ class GMailMessage:
             'refresh_token': self.refresh_token,
             'grant_type': 'refresh_token'
         }
-        r = requests.post(url, json=data)
-        print(r.json())
-        key = r.json()['access_token']
-        self.auth_token = key
+        if self.check_auth_token_expired():
+            print("Getting New GMail Auth Token...")
+            response = requests.post(url, json=data)
+            print(response.json())
+            if 'access_token' in response.json() and response.json()['access_token']:
+                self.write_auth_config(response.json(), self.auth_expiry_format)
+                self.auth_token = response.json()['access_token']
+        else:
+            auth_config = self.read_auth_config(self.auth_expiry_format)
+            self.auth_token = auth_config["AuthConfig"]["auth_token"]
         print("GMail Auth Token Attained")
 
     def gmail_create_message(self):
@@ -115,7 +197,7 @@ class GMailMessage:
     def post_message(self):
         if self.gmail_message:
             print("Sending GMail Message")
-            return requests.post(self.gmail_endpoint, headers=self.api_headers, json=self.gmail_message)
+            return requests.post(self.gmail_endpoint, headers=self.get_api_headers(), json=self.gmail_message)
         print("No GMail Message to Send")
 
     def send_gmail_message(self):
@@ -124,13 +206,13 @@ class GMailMessage:
 
     def gmail_get_messages_from_push(self):
         query_params = {'maxResults': str(1)}
-        response = requests.get(self.gmail_message_list_endpoint, headers=self.api_headers, params=query_params)
+        response = requests.get(self.gmail_message_list_endpoint, headers=self.get_api_headers(), params=query_params)
         if 'messages' in response.json():
             self.new_gmail_messages = response.json()['messages']
 
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
-        response = requests.get(get_message_endpoint, headers=self.api_headers)
+        response = requests.get(get_message_endpoint, headers=self.get_api_headers())
         print("GMail Message Attained by ID")
         message_from = None
         message_subject = None
@@ -170,7 +252,7 @@ class GMailMessage:
             'labelFilterAction': 'include',
             'topicName': self.google_topic
         }
-        response = requests.post(self.watch_endpoint, headers=self.api_headers, json=request_body)
+        response = requests.post(self.watch_endpoint, headers=self.get_api_headers(), json=request_body)
         if 'historyId' in response.json():
             print("GMail Re-Watch Success")
         else:

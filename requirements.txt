@@ -10,3 +10,4 @@ idna~=3.3
 requests~=2.27.1
 gunicorn~=20.1.0
 pyserial~=3.5
+pyopenssl~=22.0.0
