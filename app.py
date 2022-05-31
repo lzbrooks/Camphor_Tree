@@ -54,13 +54,13 @@ def console():
             current_push_id = config_file["GMailMessageId"]["current"]
             print("Saved Push ID: " + str(current_push_id))
             if push_id != current_push_id:
-                config_file["GMailMessageId"] = {"current": push_id}
+                config_file["GMailMessageId"]["current"] = push_id
                 with open("messageId.ini", "w") as file_object:
                     config_file.write(file_object)
             else:
                 return "Bounce This One", 200
         else:
-            config_file["GMailMessageId"]["current"] = push_id
+            config_file["GMailMessageId"] = {"current": push_id}
             with open("messageId.ini", "w") as file_object:
                 config_file.write(file_object)
         message_for_cloud_loop = GMailMessage()
