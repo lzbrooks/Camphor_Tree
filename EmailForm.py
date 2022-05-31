@@ -10,5 +10,5 @@ class EmailForm(Form):
     info_level = RadioField('Info Level', choices=Config.get_info_levels(),
                             validators=[validators.InputRequired()]
                             )
-    message_body = TextAreaField('Message Body', validators=[validators.Length(max=270),
+    message_body = TextAreaField('Message Body', validators=[validators.Length(max=250),
                                                              validators.DataRequired()])

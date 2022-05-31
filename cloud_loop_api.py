@@ -1,5 +1,4 @@
 import re
-
 import requests
 
 from config import Config
@@ -122,7 +121,7 @@ class CloudLoopMessage:
                 return contact_number
 
     def get_payload(self):
-        max_chunk_size = int(Config.get_max_message_size())
+        max_chunk_size = int(Config.get_max_message_size()) - len(self.message_from) - len(self.message_subject)
         total_message_length = len(self.message_to_encode)
         if total_message_length > max_chunk_size:
             self.message_to_encode = [self.message_to_encode[i: i + max_chunk_size]
@@ -153,7 +152,8 @@ class CloudLoopMessage:
                       "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
                 headers = {"Accept": "application/json"}
                 print(url)
-                requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers)
+                print(response)
                 print(payload)
                 print("Sent part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
         else:
