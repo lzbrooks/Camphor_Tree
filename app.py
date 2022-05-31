@@ -59,6 +59,10 @@ def console():
                     config_file.write(file_object)
             else:
                 return "Bounce This One", 200
+        else:
+            config_file["GMailMessageId"]["current"] = push_id
+            with open("messageId.ini", "w") as file_object:
+                config_file.write(file_object)
         message_for_cloud_loop = GMailMessage()
         message_for_cloud_loop.gmail_get_messages_from_push()
         for message in message_for_cloud_loop.new_gmail_messages:
