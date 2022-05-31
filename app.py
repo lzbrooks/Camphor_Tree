@@ -51,26 +51,30 @@ def console():
         print("New Push ID: " + str(push_id))
         config_file = configparser.ConfigParser()
         if config_file.read("historyId.ini"):
+            config_file.read("configurations.ini")
             current_push_id = config_file["GMailMessageId"]["current"]
             print("Saved Push ID: " + str(current_push_id))
             if push_id != current_push_id:
                 config_file["GMailMessageId"]["current"] = push_id
                 with open("messageId.ini", "w") as file_object:
                     config_file.write(file_object)
+                print("Saved Push ID " + str(push_id) + " to messageId.ini")
             else:
-                return "Bounce This One", 200
+                print("Bounced This One")
+                return "Bounced This One", 200
         else:
             config_file["GMailMessageId"] = {"current": push_id}
             with open("messageId.ini", "w") as file_object:
                 config_file.write(file_object)
-        message_for_cloud_loop = GMailMessage()
-        message_for_cloud_loop.gmail_get_messages_from_push()
-        for message in message_for_cloud_loop.new_gmail_messages:
-            message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
-            message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
-                                                     message_subject=message_subject,
-                                                     message_to_encode=message_text)
-            message_to_cloud_loop.send_cloud_loop_message()
-            print("POST CloudLoop Message Handled")
+            print("Saved Push ID " + str(push_id) + " to messageId.ini")
+        # message_for_cloud_loop = GMailMessage()
+        # message_for_cloud_loop.gmail_get_messages_from_push()
+        # for message in message_for_cloud_loop.new_gmail_messages:
+        #     message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
+        #     message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
+        #                                              message_subject=message_subject,
+        #                                              message_to_encode=message_text)
+        #     message_to_cloud_loop.send_cloud_loop_message()
+        #     print("POST CloudLoop Message Handled")
         return "Success", 200
     return render_template('login.html', form=login_form, server_option=server_option)
