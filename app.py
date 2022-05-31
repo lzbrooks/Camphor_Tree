@@ -67,6 +67,9 @@ def console():
             with open("messageId.ini", "w") as file_object:
                 config_file.write(file_object)
             print("Saved Push ID " + str(push_id) + " to messageId.ini")
+            config_file.read("messageId.ini")
+            print(config_file.sections())
+        print("Would be Sending Message Here")
         # message_for_cloud_loop = GMailMessage()
         # message_for_cloud_loop.gmail_get_messages_from_push()
         # for message in message_for_cloud_loop.new_gmail_messages:
