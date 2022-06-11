@@ -4,6 +4,8 @@ import re
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Tuple
+import logging
 
 import requests as requests
 
@@ -31,10 +33,11 @@ import requests as requests
 # "/gmail/v1/users/{userId}/watch"
 from config import Config
 
+_logger = logging.Logger(__name__)
 
 class GMailMessage:
     def __init__(self, google_client_id=None, google_client_secret=None,
-                 message_to=None, message_from=None, message_subject=None, message_text=None):
+                 message_to=None, message_from=None, message_subject=None, message_text=None, **kwargs):
 
         print("GMail Message Processing...")
         # Google Client ID
@@ -70,7 +73,8 @@ class GMailMessage:
         self.message_text = message_text
 
         self.new_gmail_messages = []
-        self.max_message_size = Config.get_max_message_size()
+        self.max_message_size = kwargs.get("max_message_size",Config.get_max_message_size())
+        self.message_whitelist = kwargs.get("message_whitelist",(Config.get_whitelist() or {}).values())
 
         self.auth_token = None
         self.auth_expiry_format = "%m/%d/%Y, %H:%M:%S"
@@ -203,40 +207,42 @@ class GMailMessage:
         if 'messages' in response.json():
             self.new_gmail_messages = response.json()['messages']
 
+    def _dissect_message(self,message_payload: str) -> Tuple[str,str,str]:
+        _logger.info(f"Dissecting message:\n{message_payload}")
+        for header in message_payload['headers']:
+            if header['name'] == 'From':
+                message_from = re.search(r'(?<=<).*?(?=>)', header['value']).group()
+            if header['name'] == 'Subject':
+                message_subject = header['value']
+        message_parts = message_payload.get('parts',[message_payload])
+        for message_part in message_parts:
+            if 'mimeType' in message_part and message_part['mimeType'] == 'text/plain' \
+                    and 'size' in message_part['body'] \
+                    and 'data' in message_part['body']:
+                size_in_bytes = message_part['body']['size']
+                print("Inspecting Message Size")
+                print("Max Message Size Allowed: " + self.max_message_size)
+                print("Current Message Size: " + str(size_in_bytes))
+                print("Message From: " + message_from)
+                if size_in_bytes < int(self.max_message_size):
+                    message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
+                if size_in_bytes > int(self.max_message_size) \
+                        and message_from in self.message_whitelist:
+                    message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
+        print("GMail Message Dissected")
+        return message_from, message_subject, message_text
+
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
         response = requests.get(get_message_endpoint, headers=self.get_api_headers())
         print("GMail Message Attained by ID")
-        message_from = None
-        message_subject = None
-        message_text = None
         send_message = True
         if 'DRAFT' in response.json()['labelIds'] or 'SENT' in response.json()['labelIds']:
             send_message = False
         if 'payload' in response.json() and send_message:
-            message_payload = response.json()['payload']
-            for header in message_payload['headers']:
-                if header['name'] == 'From':
-                    message_from = re.search(r'(?<=<).*?(?=>)', header['value']).group()
-                if header['name'] == 'Subject':
-                    message_subject = header['value']
-            message_parts = message_payload['parts']
-            for message_part in message_parts:
-                if 'mimeType' in message_part and message_part['mimeType'] == 'text/plain' \
-                        and 'size' in message_part['body'] \
-                        and 'data' in message_part['body']:
-                    size_in_bytes = message_part['body']['size']
-                    print("Inspecting Message Size")
-                    print("Max Message Size Allowed: " + self.max_message_size)
-                    print("Current Message Size: " + str(size_in_bytes))
-                    print("Message From: " + message_from)
-                    if size_in_bytes < int(self.max_message_size):
-                        message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
-                    if size_in_bytes > int(self.max_message_size) \
-                            and message_from in Config.get_whitelist().values():
-                        message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
+            return self._dissect_message(response.json()["payload"])
         print("GMail Message Dissected")
-        return message_from, message_subject, message_text
+        return (None, None, None)
 
     def gmail_re_watch(self):
         print("Starting GMail Re-Watch...")
