@@ -1,6 +1,6 @@
 from flask import Flask, request, redirect
 
-from google_api import GMailMessage
+from apis.google_api import GMailMessage
 
 
 app = Flask(__name__)

@@ -4,7 +4,7 @@ from datetime import datetime
 import serial
 from adafruit_rockblock import RockBlock
 
-from cloud_loop_api import CloudLoopMessage
+from apis.cloud_loop_api import CloudLoopMessage
 
 
 # Reqs:

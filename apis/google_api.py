@@ -131,7 +131,7 @@ class GMailMessage:
             "token": request_json['access_token'],
             "expires": auth_expiry_date_time.strftime(auth_expiry_format)
         }
-        with open("configurations.ini", "w") as file_object:
+        with open("../configurations.ini", "w") as file_object:
             config_file.write(file_object)
 
     @staticmethod
