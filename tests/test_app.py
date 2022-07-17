@@ -88,14 +88,14 @@ class TestAppConsoleFlow:
     def test_relay_valid_cloud_loop_message(self, client, mock_get_imei, mock_relay_cloud_loop_message_to_email):
         mock_get_imei.return_value = "2000"
         assert mock_get_imei() == "2000"
-        response = client.post('/', json={"imei": "2000"})
+        response = client.post('/', json={"imei": "2000", "data": "test data"})
         assert response.status_code == 200
         assert response.data == b'Success'
 
     def test_relay_invalid_cloud_loop_message(self, client, mock_get_imei, mock_relay_cloud_loop_message_to_email):
         mock_get_imei.return_value = "2000"
         assert mock_get_imei() == "2000"
-        response = client.post('/', json={"imei": "3000"})
+        response = client.post('/', json={"imei": "3000", "data": "test data"})
         assert response.status_code == 200
         assert b'Satsuki - Camphor Tree' in response.data
         assert b'submit-password' in response.data
@@ -103,12 +103,11 @@ class TestAppConsoleFlow:
 
     def test_relay_valid_sub_email_ping(self, client,
                                                  mock_get_google_sub,
-                                                 mock_get_gmail_push_id,
-                                                 mock_push_id_is_new,
+                                                 mock_get_latest_gmail_message_text,
+                                                 mock_message_text_is_new,
                                                  mock_relay_email_message_to_cloud_loop):
         mock_get_google_sub.return_value = "test_sub"
-        mock_get_gmail_push_id.return_value = "13"
-        mock_push_id_is_new.return_value = True
+        mock_message_text_is_new.return_value = True
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
                                               {"data": "test_data"}
@@ -116,14 +115,13 @@ class TestAppConsoleFlow:
         assert response.status_code == 200
         assert response.data == b'Success'
 
-    def test_relay_duplicate_sub_email_ping(self, client,
+    def test_bounce_duplicate_sub_email_ping(self, client,
                                                      mock_get_google_sub,
-                                                     mock_get_gmail_push_id,
-                                                     mock_push_id_is_new,
+                                                     mock_get_latest_gmail_message_text,
+                                                     mock_message_text_is_new,
                                                      mock_relay_email_message_to_cloud_loop):
         mock_get_google_sub.return_value = "test_sub"
-        mock_get_gmail_push_id.return_value = "13"
-        mock_push_id_is_new.return_value = False
+        mock_message_text_is_new.return_value = False
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
                                               {"data": "test_data"}

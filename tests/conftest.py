@@ -38,18 +38,18 @@ def mock_get_google_sub(mocker):
 
 
 @pytest.fixture
-def mock_get_gmail_push_id(mocker):
-    return mocker.patch("app.get_gmail_push_id")
-
-
-@pytest.fixture
-def mock_push_id_is_new(mocker):
-    return mocker.patch("app.push_id_is_new")
-
-
-@pytest.fixture
 def mock_relay_email_message_to_cloud_loop(mocker):
     return mocker.patch("app.relay_email_message_to_cloud_loop")
+
+
+@pytest.fixture
+def mock_get_latest_gmail_message_text(mocker):
+    return mocker.patch("app.get_latest_gmail_message_text")
+
+
+@pytest.fixture
+def mock_message_text_is_new(mocker):
+    return mocker.patch("app.message_text_is_new")
 
 #
 # Camphor Tree API Mocks
@@ -151,17 +151,3 @@ def mock_gmail_api_send_gmail_message(mocker):
 # Other Function Mocks
 #
 
-
-@pytest.fixture
-def mock_open(mocker):
-    return mocker.patch("apis.camphor_tree_api.open")
-
-
-@pytest.fixture
-def mock_get_gmail_push_id_from_config(mocker):
-    return mocker.patch("apis.camphor_tree_api.get_gmail_push_id_from_config")
-
-
-@pytest.fixture
-def mock_save_gmail_push_id_to_file(mocker):
-    return mocker.patch("apis.camphor_tree_api.save_gmail_push_id_to_file")

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 
-from apis.camphor_tree_api import push_id_is_new, get_gmail_push_id, relay_email_message_to_cloud_loop, \
-    relay_cloud_loop_message_to_email, send_satellite_message
+from apis.camphor_tree_api import relay_email_message_to_cloud_loop, \
+    relay_cloud_loop_message_to_email, send_satellite_message, get_latest_gmail_message_text, message_text_is_new
 from forms.EmailForm import EmailForm
 from forms.LoginForm import LoginForm
 from config import Config
@@ -28,12 +28,11 @@ def console():
         send_status = 'Send Failure'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if request.is_json and "imei" in request.json and request.json['imei'] == Config.get_imei():
-        # TODO: add env var flag to stop sending over cloud loop
         relay_cloud_loop_message_to_email(request.json['data'])
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
-        push_id = get_gmail_push_id(request.json['message']['data'])
-        if push_id_is_new(push_id):
+        new_message_text = get_latest_gmail_message_text()
+        if message_text_is_new(new_message_text):
             relay_email_message_to_cloud_loop()
         else:
             return "Bounced This One", 200

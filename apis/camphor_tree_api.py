@@ -43,42 +43,36 @@ def relay_cloud_loop_message_to_email(request_json_data):
     print("POST GMail Message Handled")
 
 
-def get_gmail_push_id(gmail_message_data):
-    print("POST GMail Ping Received")
-    # push_id = request.json['message']['messageId']
-    # TODO: catch gmail ping json for testing
-    push_id = json.loads(base64.urlsafe_b64decode(gmail_message_data).decode('utf-8'))['historyId']
-    print("New Push ID: " + str(push_id))
-    return push_id
+def get_latest_gmail_message_text():
+    message_for_cloud_loop = GMailMessage()
+    message_for_cloud_loop.gmail_get_messages_from_push()
+    message = message_for_cloud_loop.get_new_gmail_messages()[0]
+    _, _, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
+    return message_text
 
 
-def save_gmail_push_id_to_file(config_file_name, push_id):
-    config_file = configparser.ConfigParser()
-    config_file["GMailMessageId"] = {"current": str(push_id)}
-    with open(config_file_name, "w") as file_object:
-        config_file.write(file_object)
-    print("Saved Push ID " + str(push_id) + " to " + config_file_name)
-
-
-def get_gmail_push_id_from_config(config_file_name):
-    config_file = configparser.ConfigParser()
-    config_file.read(config_file_name)
-    current_push_id = config_file["GMailMessageId"]["current"]
-    print("Old Push ID: " + str(current_push_id))
-    return current_push_id
-
-
-def push_id_is_new(push_id):
-    config_file_name = "historyId.ini"
-    config_file = configparser.ConfigParser()
-    if config_file.read(config_file_name):
-        current_push_id = get_gmail_push_id_from_config(config_file_name)
-        if int(push_id) != int(current_push_id):
-            save_gmail_push_id_to_file(config_file_name, push_id)
-            return True
-        else:
-            print("Bounce This One")
-            return False
+def message_text_is_new(message_text):
+    message_file_name = "last_gmail_message.json"
+    last_gmail_message_text = read_gmail_message_from_file(message_file_name)
+    if message_text != last_gmail_message_text:
+        save_gmail_message_to_file(message_file_name, message_text)
+        return True
     else:
-        save_gmail_push_id_to_file(config_file_name, push_id)
-    return True
+        print("Bounce This One")
+        return False
+
+
+def read_gmail_message_from_file(message_file_name):
+    with open(message_file_name, 'r') as last_gmail_message_file:
+        return json.load(last_gmail_message_file)["last_gmail_message"]
+
+
+def save_gmail_message_to_file(message_file_name, message_text):
+    gmail_message_json = {"last_gmail_message": message_text}
+    with open(message_file_name, "w") as file_object:
+        json.dump(gmail_message_json, file_object)
+    print("Saved GMail Message to " + message_file_name)
+
+
+# TODO: merge dissect_messages branch here and in main
+# TODO: get google cloud account
