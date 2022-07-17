@@ -154,4 +154,14 @@ def mock_gmail_api_send_gmail_message(mocker):
 
 @pytest.fixture
 def mock_open(mocker):
-    return mocker.patch("camphor_tree_api.open")
+    return mocker.patch("apis.camphor_tree_api.open")
+
+
+@pytest.fixture
+def mock_get_gmail_push_id_from_config(mocker):
+    return mocker.patch("apis.camphor_tree_api.get_gmail_push_id_from_config")
+
+
+@pytest.fixture
+def mock_save_gmail_push_id_to_file(mocker):
+    return mocker.patch("apis.camphor_tree_api.save_gmail_push_id_to_file")

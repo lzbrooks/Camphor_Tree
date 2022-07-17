@@ -52,14 +52,16 @@ def get_gmail_push_id(gmail_message_data):
     return push_id
 
 
-def save_gmail_push_id_to_file(config_file, config_file_name, push_id):
+def save_gmail_push_id_to_file(config_file_name, push_id):
+    config_file = configparser.ConfigParser()
     config_file["GMailMessageId"] = {"current": str(push_id)}
     with open(config_file_name, "w") as file_object:
         config_file.write(file_object)
     print("Saved Push ID " + str(push_id) + " to " + config_file_name)
 
 
-def get_gmail_push_id_from_config(config_file, config_file_name):
+def get_gmail_push_id_from_config(config_file_name):
+    config_file = configparser.ConfigParser()
     config_file.read(config_file_name)
     current_push_id = config_file["GMailMessageId"]["current"]
     print("Old Push ID: " + str(current_push_id))
@@ -70,13 +72,13 @@ def push_id_is_new(push_id):
     config_file_name = "historyId.ini"
     config_file = configparser.ConfigParser()
     if config_file.read(config_file_name):
-        current_push_id = get_gmail_push_id_from_config(config_file, config_file_name)
+        current_push_id = get_gmail_push_id_from_config(config_file_name)
         if int(push_id) != int(current_push_id):
-            save_gmail_push_id_to_file(config_file, config_file_name, push_id)
+            save_gmail_push_id_to_file(config_file_name, push_id)
             return True
         else:
             print("Bounce This One")
             return False
     else:
-        save_gmail_push_id_to_file(config_file, config_file_name, push_id)
+        save_gmail_push_id_to_file(config_file_name, push_id)
     return True
