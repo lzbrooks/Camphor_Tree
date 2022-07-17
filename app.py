@@ -17,6 +17,7 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def console():
     server_option = Config.get_sister()
+    relay_on = Config.get_relay_switch()
     login_form = LoginForm(request.form)
     email_form = EmailForm(request.form)
     if not request.is_json and "submit-password" in request.form and not login_form.validate():
@@ -28,12 +29,14 @@ def console():
         rock_block_message = CloudLoopMessage(message_from=email_form.email.data,
                                               message_subject=email_form.info_level.data,
                                               message_to_encode=email_form.message_body.data)
-        if server_option == 'Satsuki':
-            rock_block_message.send_cloud_loop_message()
-        if server_option == 'Mei':
-            rock_block_api = RockBlockAPI()
-            rock_block_api.send_data_out(rock_block_message.payload_list)
-        send_status = 'Send Success'
+        send_status = 'Relay Disabled'
+        if relay_on:
+            if server_option == 'Satsuki':
+                rock_block_message.send_cloud_loop_message()
+            if server_option == 'Mei':
+                rock_block_api = RockBlockAPI()
+                rock_block_api.send_data_out(rock_block_message.payload_list)
+            send_status = 'Send Success'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and not email_form.validate():
         send_status = 'Send Failure'

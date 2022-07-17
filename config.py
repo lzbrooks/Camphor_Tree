@@ -17,6 +17,15 @@ class Config:
             return 'satsuki'
 
     @staticmethod
+    def get_relay_switch():
+        # CAMPHOR_TREE_RELAY=True
+        # CAMPHOR_TREE_RELAY=False
+        if 'CAMPHOR_TREE_RELAY' in os.environ:
+            return os.environ['CAMPHOR_TREE_RELAY'] == 'True'
+        else:
+            return True
+
+    @staticmethod
     def get_email():
         if 'CAMPHOR_TREE_EMAIL' in os.environ:
             return os.environ['CAMPHOR_TREE_EMAIL']
