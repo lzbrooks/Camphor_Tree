@@ -20,13 +20,16 @@ def console():
         send_status = 'Console'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and email_form.validate():
-        send_status = send_satellite_message(email_form, server_option)
+        send_status = send_satellite_message(email_form.email.data,
+                                             email_form.info_level.data,
+                                             email_form.message_body.data, server_option)
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and not email_form.validate():
         send_status = 'Send Failure'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if request.is_json and "imei" in request.json and request.json['imei'] == Config.get_imei():
-        relay_cloud_loop_message_to_email()
+        # TODO: add env var flag to stop sending over cloud loop
+        relay_cloud_loop_message_to_email(request.json['data'])
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
         push_id = get_gmail_push_id(request.json['message']['data'])

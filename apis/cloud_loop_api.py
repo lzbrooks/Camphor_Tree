@@ -17,6 +17,9 @@ from config import Config
 
 class CloudLoopMessage:
     def __init__(self, hex_message=None, message_from=None, message_subject=None, message_to_encode=None):
+        self.hex_message = None
+        self.decoded_message = None
+
         self.message_subject = None
         self.auth_token = None
         self.hardware_id = None
@@ -24,17 +27,12 @@ class CloudLoopMessage:
         self.message_from = None
         self.payload_list = None
         self.recipient_list = []
-        self.message_subject = None
         self.message = None
-        # Hex Encoded Message
-        if hex_message:
-            print("Hex Message Processing...")
-            self.hex_message = hex_message
-            self.decoded_message = None
-            self.decode_hex_message()
-            self.split_recipient()
-            print("Hex Message Processed")
-        # Message to be Hex Encoded
+
+        self.set_up_hex_encoded_message(hex_message)
+        self.set_up_message_to_hex_encode(message_from, message_subject, message_to_encode)
+
+    def set_up_message_to_hex_encode(self, message_from, message_subject, message_to_encode):
         if message_to_encode:
             print("Message Encoding...")
             self.auth_token = Config.get_cloud_loop_auth_token()
@@ -47,6 +45,15 @@ class CloudLoopMessage:
             self.message_subject = message_subject
             self.payload_list = self.get_payload()
             print("Message Encoded")
+
+    def set_up_hex_encoded_message(self, hex_message):
+        if hex_message:
+            print("Hex Message Processing...")
+            self.hex_message = hex_message
+            self.decoded_message = None
+            self.decode_hex_message()
+            self.split_recipient()
+            print("Hex Message Processed")
 
     def decode_hex_message(self):
         # From JSON payload hex string to bytes

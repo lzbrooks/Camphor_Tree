@@ -35,51 +35,74 @@ from config import Config
 class GMailMessage:
     def __init__(self, google_client_id=None, google_client_secret=None,
                  message_to=None, message_from=None, message_subject=None, message_text=None):
-
         print("GMail Message Processing...")
-        # Google Client ID
-        if google_client_id is None:
-            self.google_client_id = Config.get_google_id()
-        else:
-            self.google_client_id = google_client_id
 
-        # Google Client Secret
-        if google_client_secret is None:
-            self.google_client_secret = Config.get_google_secret()
-        else:
-            self.google_client_secret = google_client_secret
+        self.google_client_id = None
+        self.google_client_secret = None
+        self.google_topic = None
+        self.refresh_token = None
 
-        # Google Refresh Token
-        self.refresh_token = Config.get_google_refresh_token()
+        self.message_from = None
+        self.message_to = None
 
-        # Google Pub/Sub Topic
-        self.google_topic = Config.get_google_topic()
+        self.set_up_google_client_id(google_client_id)
+        self.set_up_google_client_secret(google_client_secret)
+        self.set_up_refresh_token()
+        self.set_up_google_topic()
 
-        # Email Recipient
-        if message_to is None:
-            self.message_to = Config.get_email()
-        else:
-            self.message_to = message_to
+        self.set_up_email_recipient(message_to)
+        self.set_up_email_sender(message_from)
 
-        # Email Sender
-        if message_from is None:
-            self.message_from = Config.get_email()
-        else:
-            self.message_from = message_from
         self.message_subject = message_subject
         self.message_text = message_text
 
         self.new_gmail_messages = []
-        self.max_message_size = Config.get_max_message_size()
+        self.max_message_size = None
+        self.set_up_message_size()
 
         self.auth_token = None
         self.auth_expiry_format = "%m/%d/%Y, %H:%M:%S"
+
         self.gmail_message = None
+
         self.gmail_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
         self.gmail_message_list_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
         self.gmail_get_message_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/"
         self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
         print("GMail Message Processed")
+
+    def set_up_google_client_id(self, google_client_id):
+        if google_client_id is None:
+            self.google_client_id = Config.get_google_id()
+        else:
+            self.google_client_id = google_client_id
+
+    def set_up_google_client_secret(self, google_client_secret):
+        if google_client_secret is None:
+            self.google_client_secret = Config.get_google_secret()
+        else:
+            self.google_client_secret = google_client_secret
+
+    def set_up_google_topic(self):
+        self.google_topic = Config.get_google_topic()
+
+    def set_up_refresh_token(self):
+        self.refresh_token = Config.get_google_refresh_token()
+
+    def set_up_email_sender(self, message_from):
+        if message_from is None:
+            self.message_from = Config.get_email()
+        else:
+            self.message_from = message_from
+
+    def set_up_email_recipient(self, message_to):
+        if message_to is None:
+            self.message_to = Config.get_email()
+        else:
+            self.message_to = message_to
+
+    def set_up_message_size(self):
+        self.max_message_size = Config.get_max_message_size()
 
     def get_api_headers(self):
         self.get_auth_token()
@@ -250,6 +273,9 @@ class GMailMessage:
             print("GMail Re-Watch Success")
         else:
             print("Gmail Re-Watch Failure")
+
+    def get_new_gmail_messages(self):
+        return self.new_gmail_messages
 
 
 if __name__ == "__main__":

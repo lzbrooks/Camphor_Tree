@@ -2,22 +2,21 @@ import base64
 import configparser
 import json
 
-from flask import request
-
 from apis.cloud_loop_api import CloudLoopMessage
 from apis.google_api import GMailMessage
 from apis.rock_block_api import RockBlockAPI
 
 
-def send_satellite_message(email_form, server_option):
-    rock_block_message = CloudLoopMessage(message_from=email_form.email.data,
-                                          message_subject=email_form.info_level.data,
-                                          message_to_encode=email_form.message_body.data)
+def send_satellite_message(email, info_level, message_body, server_option):
+    rock_block_message = CloudLoopMessage(message_from=email,
+                                          message_subject=info_level,
+                                          message_to_encode=message_body)
     if server_option == 'Satsuki':
         rock_block_message.send_cloud_loop_message()
     if server_option == 'Mei':
         rock_block_api = RockBlockAPI()
         rock_block_api.send_data_out(rock_block_message.payload_list)
+    # TODO: add check for incorrect server option
     send_status = 'Send Success'
     return send_status
 
@@ -25,7 +24,7 @@ def send_satellite_message(email_form, server_option):
 def relay_email_message_to_cloud_loop():
     message_for_cloud_loop = GMailMessage()
     message_for_cloud_loop.gmail_get_messages_from_push()
-    for message in message_for_cloud_loop.new_gmail_messages:
+    for message in message_for_cloud_loop.get_new_gmail_messages():
         message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
         message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
                                                  message_subject=message_subject,
@@ -34,9 +33,9 @@ def relay_email_message_to_cloud_loop():
         print("POST CloudLoop Message Handled")
 
 
-def relay_cloud_loop_message_to_email():
+def relay_cloud_loop_message_to_email(request_json_data):
     print("POST CloudLoop Ping Received")
-    message_from_cloud_loop = CloudLoopMessage(hex_message=request.json['data'])
+    message_from_cloud_loop = CloudLoopMessage(hex_message=request_json_data)
     gmail_message = GMailMessage(message_to=message_from_cloud_loop.recipient_list,
                                  message_subject=message_from_cloud_loop.message_subject,
                                  message_text=message_from_cloud_loop.message)
@@ -47,6 +46,7 @@ def relay_cloud_loop_message_to_email():
 def get_gmail_push_id(gmail_message_data):
     print("POST GMail Ping Received")
     # push_id = request.json['message']['messageId']
+    # TODO: catch gmail ping json for testing
     push_id = json.loads(base64.urlsafe_b64decode(gmail_message_data).decode('utf-8'))['historyId']
     print("New Push ID: " + str(push_id))
     return push_id

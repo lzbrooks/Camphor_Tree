@@ -15,6 +15,10 @@ from apis.cloud_loop_api import CloudLoopMessage
 
 class RockBlockAPI:
     def __init__(self):
+        self.rock_block = None
+        self.set_up_uart()
+
+    def set_up_uart(self):
         print("RockBLOCK Processing...")
         uart = serial.Serial("/dev/serial0", 19200)
         self.rock_block = RockBlock(uart)
