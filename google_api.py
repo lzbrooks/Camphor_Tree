@@ -35,6 +35,7 @@ from config import Config
 
 _logger = logging.Logger(__name__)
 
+
 class GMailMessage:
     def __init__(self, google_client_id=None, google_client_secret=None,
                  message_to=None, message_from=None, message_subject=None, message_text=None, **kwargs):
@@ -73,8 +74,8 @@ class GMailMessage:
         self.message_text = message_text
 
         self.new_gmail_messages = []
-        self.max_message_size = kwargs.get("max_message_size",Config.get_max_message_size())
-        self.message_whitelist = kwargs.get("message_whitelist",(Config.get_whitelist() or {}).values())
+        self.max_message_size = kwargs.get("max_message_size", Config.get_max_message_size())
+        self.message_whitelist = kwargs.get("message_whitelist", (Config.get_whitelist() or {}).values())
 
         self.auth_token = None
         self.auth_expiry_format = "%m/%d/%Y, %H:%M:%S"
@@ -207,14 +208,14 @@ class GMailMessage:
         if 'messages' in response.json():
             self.new_gmail_messages = response.json()['messages']
 
-    def _dissect_message(self,message_payload: str) -> Tuple[str,str,str]:
+    def _dissect_message(self, message_payload: str) -> Tuple[str, str, str]:
         _logger.info(f"Dissecting message:\n{message_payload}")
         for header in message_payload['headers']:
             if header['name'] == 'From':
                 message_from = re.search(r'(?<=<).*?(?=>)', header['value']).group()
             if header['name'] == 'Subject':
                 message_subject = header['value']
-        message_parts = message_payload.get('parts',[message_payload])
+        message_parts = message_payload.get('parts', [message_payload])
         for message_part in message_parts:
             if 'mimeType' in message_part and message_part['mimeType'] == 'text/plain' \
                     and 'size' in message_part['body'] \
@@ -242,7 +243,7 @@ class GMailMessage:
         if 'payload' in response.json() and send_message:
             return self._dissect_message(response.json()["payload"])
         print("GMail Message Dissected")
-        return (None, None, None)
+        return None, None, None
 
     def gmail_re_watch(self):
         print("Starting GMail Re-Watch...")
