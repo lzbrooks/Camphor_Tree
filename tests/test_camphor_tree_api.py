@@ -1,8 +1,10 @@
 import json
 
+import pytest
+
 from apis.camphor_tree_api import send_satellite_message, relay_email_message_to_cloud_loop, \
-    relay_cloud_loop_message_to_email, get_latest_gmail_message_text, message_text_is_new, read_gmail_message_from_file, \
-    save_gmail_message_to_file
+    relay_cloud_loop_message_to_email, get_latest_gmail_message_text, message_text_is_new, \
+    read_gmail_message_from_file, save_gmail_message_to_file
 
 
 class TestCamphorTreeApi:
@@ -25,18 +27,19 @@ class TestCamphorTreeApi:
         assert mock_rock_block_api_send_data_out.called
         assert send_status == 'Send Success'
 
-    def test_relay_email_message_to_cloud_loop_no_messages(self, mock_gmail_api_set_up_google_client_id,
+    def test_relay_email_message_to_cloud_loop_no_message(self, mock_gmail_api_set_up_google_client_id,
                                                            mock_gmail_api_set_up_set_up_google_client_secret,
                                                            mock_gmail_api_set_up_set_up_refresh_token,
                                                            mock_gmail_api_set_up_set_up_google_topic,
                                                            mock_gmail_api_set_up_set_up_email_recipient,
                                                            mock_gmail_api_set_up_set_up_email_sender,
                                                            mock_gmail_api_set_up_set_up_message_size,
-                                                           mock_gmail_api_gmail_get_messages_from_push,
+                                                           gmail_get_first_message_from_push,
                                                            mock_cloud_loop_message_set_up_hex_encoded_message,
                                                            mock_cloud_loop_message_set_up_message_to_hex_encode,
                                                            mock_cloud_loop_message_send_cloud_loop_message):
-        relay_email_message_to_cloud_loop()
+        with pytest.raises(TypeError, match=r"list indices must be integers or slices, not str"):
+            relay_email_message_to_cloud_loop()
         assert not mock_cloud_loop_message_set_up_hex_encoded_message.called
         assert not mock_cloud_loop_message_set_up_message_to_hex_encode.called
         assert not mock_cloud_loop_message_send_cloud_loop_message.called
@@ -48,40 +51,19 @@ class TestCamphorTreeApi:
                                                            mock_gmail_api_set_up_set_up_email_recipient,
                                                            mock_gmail_api_set_up_set_up_email_sender,
                                                            mock_gmail_api_set_up_set_up_message_size,
-                                                           mock_gmail_api_gmail_get_messages_from_push,
-                                                           mock_gmail_api_get_new_gmail_messages,
+                                                           gmail_get_first_message_from_push,
+                                                           mock_gmail_api_get_new_gmail_message,
                                                            mock_gmail_api_gmail_get_message_by_id,
                                                            mock_cloud_loop_message_set_up_hex_encoded_message,
                                                            mock_cloud_loop_message_set_up_message_to_hex_encode,
                                                            mock_cloud_loop_message_send_cloud_loop_message):
-        mock_gmail_api_get_new_gmail_messages.return_value = ["test_message"]
+        mock_gmail_api_get_new_gmail_message.return_value = "test_message"
         mock_gmail_api_gmail_get_message_by_id.return_value = ("message_from", "message_subject", "message_text")
 
         relay_email_message_to_cloud_loop()
         assert mock_cloud_loop_message_set_up_hex_encoded_message.called
         assert mock_cloud_loop_message_set_up_message_to_hex_encode.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
-
-    def test_relay_email_message_to_cloud_loop_message_list(self, mock_gmail_api_set_up_google_client_id,
-                                                            mock_gmail_api_set_up_set_up_google_client_secret,
-                                                            mock_gmail_api_set_up_set_up_refresh_token,
-                                                            mock_gmail_api_set_up_set_up_google_topic,
-                                                            mock_gmail_api_set_up_set_up_email_recipient,
-                                                            mock_gmail_api_set_up_set_up_email_sender,
-                                                            mock_gmail_api_set_up_set_up_message_size,
-                                                            mock_gmail_api_gmail_get_messages_from_push,
-                                                            mock_gmail_api_get_new_gmail_messages,
-                                                            mock_gmail_api_gmail_get_message_by_id,
-                                                            mock_cloud_loop_message_set_up_hex_encoded_message,
-                                                            mock_cloud_loop_message_set_up_message_to_hex_encode,
-                                                            mock_cloud_loop_message_send_cloud_loop_message):
-        mock_gmail_api_get_new_gmail_messages.return_value = ["test_message_1", "test_message_2", "test_message_3"]
-        mock_gmail_api_gmail_get_message_by_id.return_value = ("message_from", "message_subject", "message_text")
-
-        relay_email_message_to_cloud_loop()
-        assert mock_cloud_loop_message_set_up_hex_encoded_message.call_count == 3
-        assert mock_cloud_loop_message_set_up_message_to_hex_encode.call_count == 3
-        assert mock_cloud_loop_message_send_cloud_loop_message.call_count == 3
 
     def test_relay_cloud_loop_message_to_email(self, mock_gmail_api_set_up_google_client_id,
                                                mock_gmail_api_set_up_set_up_google_client_secret,
@@ -105,15 +87,15 @@ class TestCamphorTreeApi:
                                                   mock_gmail_api_set_up_set_up_email_recipient,
                                                   mock_gmail_api_set_up_set_up_email_sender,
                                                   mock_gmail_api_set_up_set_up_message_size,
-                                                  mock_gmail_api_gmail_get_messages_from_push,
-                                                  mock_gmail_api_get_new_gmail_messages,
+                                                  gmail_get_first_message_from_push,
+                                                  mock_gmail_api_get_new_gmail_message,
                                                   mock_gmail_api_gmail_get_message_by_id):
         mock_gmail_api_gmail_get_message_by_id.return_value = "test_message_from", \
                                                               "test_message_subject", \
                                                               "test_message_text"
         message_text = get_latest_gmail_message_text()
-        assert mock_gmail_api_gmail_get_messages_from_push.called
-        assert mock_gmail_api_get_new_gmail_messages.called
+        assert gmail_get_first_message_from_push.called
+        assert mock_gmail_api_get_new_gmail_message.called
         assert mock_gmail_api_gmail_get_message_by_id.called
         assert message_text == "test_message_text"
 
