@@ -1,5 +1,3 @@
-import base64
-import configparser
 import json
 
 from apis.cloud_loop_api import CloudLoopMessage
@@ -23,14 +21,14 @@ def send_satellite_message(email, info_level, message_body, server_option):
 
 def relay_email_message_to_cloud_loop():
     message_for_cloud_loop = GMailMessage()
-    message_for_cloud_loop.gmail_get_messages_from_push()
-    for message in message_for_cloud_loop.get_new_gmail_messages():
-        message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
-        message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
-                                                 message_subject=message_subject,
-                                                 message_to_encode=message_text)
-        message_to_cloud_loop.send_cloud_loop_message()
-        print("POST CloudLoop Message Handled")
+    message_for_cloud_loop.gmail_get_first_message_from_push()
+    message = message_for_cloud_loop.get_new_gmail_message()
+    message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
+    message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
+                                             message_subject=message_subject,
+                                             message_to_encode=message_text)
+    message_to_cloud_loop.send_cloud_loop_message()
+    print("POST CloudLoop Message Handled")
 
 
 def relay_cloud_loop_message_to_email(request_json_data):
@@ -45,14 +43,13 @@ def relay_cloud_loop_message_to_email(request_json_data):
 
 def get_latest_gmail_message_text():
     message_for_cloud_loop = GMailMessage()
-    message_for_cloud_loop.gmail_get_messages_from_push()
-    message = message_for_cloud_loop.get_new_gmail_messages()[0]
+    message_for_cloud_loop.gmail_get_first_message_from_push()
+    message = message_for_cloud_loop.get_new_gmail_message()
     _, _, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
     return message_text
 
 
-def message_text_is_new(message_text):
-    message_file_name = "last_gmail_message.json"
+def message_text_is_new(message_text, message_file_name="last_gmail_message.json"):
     last_gmail_message_text = read_gmail_message_from_file(message_file_name)
     if message_text != last_gmail_message_text:
         save_gmail_message_to_file(message_file_name, message_text)
@@ -62,16 +59,16 @@ def message_text_is_new(message_text):
         return False
 
 
-def read_gmail_message_from_file(message_file_name):
-    with open(message_file_name, 'r') as last_gmail_message_file:
+def read_gmail_message_from_file(message_file_path):
+    with open(message_file_path, 'r') as last_gmail_message_file:
         return json.load(last_gmail_message_file)["last_gmail_message"]
 
 
-def save_gmail_message_to_file(message_file_name, message_text):
+def save_gmail_message_to_file(message_file_path, message_text):
     gmail_message_json = {"last_gmail_message": message_text}
-    with open(message_file_name, "w") as file_object:
+    with open(message_file_path, "w") as file_object:
         json.dump(gmail_message_json, file_object)
-    print("Saved GMail Message to " + message_file_name)
+    print("Saved GMail Message to " + str(message_file_path))
 
 
 # TODO: merge dissect_messages branch here and in main

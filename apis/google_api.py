@@ -56,7 +56,7 @@ class GMailMessage:
         self.message_subject = message_subject
         self.message_text = message_text
 
-        self.new_gmail_messages = []
+        self.new_gmail_message = []
         self.max_message_size = None
         self.set_up_message_size()
 
@@ -220,11 +220,11 @@ class GMailMessage:
         self.gmail_create_message()
         self.post_message()
 
-    def gmail_get_messages_from_push(self):
+    def gmail_get_first_message_from_push(self):
         query_params = {'maxResults': str(1)}
         response = requests.get(self.gmail_message_list_endpoint, headers=self.get_api_headers(), params=query_params)
         if 'messages' in response.json():
-            self.new_gmail_messages = response.json()['messages']
+            self.new_gmail_message = response.json()['messages'][0]
 
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
@@ -274,8 +274,8 @@ class GMailMessage:
         else:
             print("Gmail Re-Watch Failure")
 
-    def get_new_gmail_messages(self):
-        return self.new_gmail_messages
+    def get_new_gmail_message(self):
+        return self.new_gmail_message
 
 
 if __name__ == "__main__":

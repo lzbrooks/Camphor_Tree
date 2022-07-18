@@ -1,5 +1,8 @@
+import json
+
 from apis.camphor_tree_api import send_satellite_message, relay_email_message_to_cloud_loop, \
-    relay_cloud_loop_message_to_email
+    relay_cloud_loop_message_to_email, get_latest_gmail_message_text, message_text_is_new, read_gmail_message_from_file, \
+    save_gmail_message_to_file
 
 
 class TestCamphorTreeApi:
@@ -94,35 +97,59 @@ class TestCamphorTreeApi:
         relay_cloud_loop_message_to_email("test_request_json_data")
         assert mock_gmail_api_send_gmail_message.called
 
-    # def test_get_gmail_push_id(self):
-    #     test_push_id = b'6675'
-    #     test_gmail_message_data = b'{"historyId": ' + test_push_id + b'}'
-    #     test_gmail_message_data = base64.urlsafe_b64encode(test_gmail_message_data)
-    #     push_id = get_gmail_push_id(test_gmail_message_data)
-    #     assert push_id == int(test_push_id.decode('utf-8'))
+    def test_get_latest_gmail_message_text(self,
+                                                  mock_gmail_api_set_up_google_client_id,
+                                                  mock_gmail_api_set_up_set_up_google_client_secret,
+                                                  mock_gmail_api_set_up_set_up_refresh_token,
+                                                  mock_gmail_api_set_up_set_up_google_topic,
+                                                  mock_gmail_api_set_up_set_up_email_recipient,
+                                                  mock_gmail_api_set_up_set_up_email_sender,
+                                                  mock_gmail_api_set_up_set_up_message_size,
+                                                  mock_gmail_api_gmail_get_messages_from_push,
+                                                  mock_gmail_api_get_new_gmail_messages,
+                                                  mock_gmail_api_gmail_get_message_by_id):
+        mock_gmail_api_gmail_get_message_by_id.return_value = "test_message_from", \
+                                                              "test_message_subject", \
+                                                              "test_message_text"
+        message_text = get_latest_gmail_message_text()
+        assert mock_gmail_api_gmail_get_messages_from_push.called
+        assert mock_gmail_api_get_new_gmail_messages.called
+        assert mock_gmail_api_gmail_get_message_by_id.called
+        assert message_text == "test_message_text"
 
-    # def test_save_gmail_push_id_to_file(self, mock_open):
-    #     test_push_id = "5"
-    #     save_gmail_push_id_to_file("test_config_file_name", test_push_id)
-    #     # TODO: add temp file catch to check file results
-    #     assert mock_open.called
+    def test_message_text_is_new_true(self, mock_read_gmail_message_from_file, mock_save_gmail_message_to_file):
+        test_message_text = "test message body"
+        mock_read_gmail_message_from_file.return_value = "old message body"
+        message_new = message_text_is_new(test_message_text)
+        assert message_new
 
-    # TODO: switch to hash of last email string in full, no config file
-    # def test_get_gmail_push_id_from_config(self, tmpdir):
-    #     test_config_file_name = "test_config.ini"
-    #     test_push_id = "5"
-    #     read_config_file = configparser.ConfigParser()
-    #     read_config_file["GMailMessageId"] = {"current": str(test_push_id)}
-    #     assert read_config_file["GMailMessageId"]["current"] == test_push_id
-    #     test_config_file_object = tmpdir.mkdir("subdir").join(test_config_file_name)
-    #     read_config_file.write(test_config_file_object)
-    #
-    #     checking_config_file = configparser.ConfigParser()
-    #     checking_config_file.read(test_config_file_name)
-    #     assert checking_config_file["GMailMessageId"]["current"] == test_push_id
-    #     current_push_id = get_gmail_push_id_from_config(test_config_file_name)
-    #     assert current_push_id == test_push_id
+    def test_message_text_is_new_true_empty(self, mock_read_gmail_message_from_file, mock_save_gmail_message_to_file):
+        test_message_text = "test message body"
+        mock_read_gmail_message_from_file.return_value = None
+        message_new = message_text_is_new(test_message_text)
+        assert message_new
 
-    # def test_push_id_is_new(self, mock_get_gmail_push_id_from_config, mock_save_gmail_push_id_to_file):
-    #     push_id_return = push_id_is_new("5")
-    #     assert push_id_return is True
+    def test_message_text_is_new_false_no_diff(self,
+                                               mock_read_gmail_message_from_file, mock_save_gmail_message_to_file):
+        test_message_text = "test message body"
+        mock_read_gmail_message_from_file.return_value = test_message_text
+        message_new = message_text_is_new(test_message_text)
+        assert not message_new
+
+    def test_read_gmail_message_from_file(self, tmp_path):
+        test_gmail_message_dict = {"last_gmail_message": "test gmail body"}
+        test_message_file_name = "test_message_file.json"
+        test_message_file_path = tmp_path / test_message_file_name
+        with open(test_message_file_path, "w") as test_message_file_object:
+            json.dump(test_gmail_message_dict, test_message_file_object)
+        return_json = read_gmail_message_from_file(test_message_file_path)
+        assert return_json == test_gmail_message_dict["last_gmail_message"]
+
+    def test_save_gmail_message_to_file(self, tmp_path):
+        test_message_text = "message body text"
+        test_message_file_name = "test_message_file.json"
+        test_message_file_path = tmp_path / test_message_file_name
+        save_gmail_message_to_file(test_message_file_path, test_message_text)
+        with open(test_message_file_path, 'r') as test_message_file_object:
+            saved_json_message_text = json.load(test_message_file_object)["last_gmail_message"]
+        assert saved_json_message_text == test_message_text

@@ -55,6 +55,16 @@ def mock_message_text_is_new(mocker):
 # Camphor Tree API Mocks
 #
 
+
+@pytest.fixture
+def mock_read_gmail_message_from_file(mocker):
+    return mocker.patch("apis.camphor_tree_api.read_gmail_message_from_file")
+
+
+@pytest.fixture
+def mock_save_gmail_message_to_file(mocker):
+    return mocker.patch("apis.camphor_tree_api.save_gmail_message_to_file")
+
 #
 # Cloud Loop API Mocks
 #
