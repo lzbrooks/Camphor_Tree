@@ -4,7 +4,7 @@ from datetime import datetime
 import serial
 from adafruit_rockblock import RockBlock
 
-from apis.cloud_loop_api import CloudLoopMessage
+from apis.cloud_loop_api import DecodeCloudLoopMessage
 
 
 # Reqs:
@@ -46,6 +46,7 @@ class RockBlockAPI:
             self.talk_to_rock_block()
 
 
+# TODO: break out into functions, perhaps a small class
 if __name__ == "__main__":
     rock_block_ping = RockBlockAPI()
     status_of_mailbox = rock_block_ping.talk_to_rock_block()
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     hex_data = rock_block_ping.rock_block.data_in
     print(hex_data)
     if hex_data:
-        message_from_rock_block = CloudLoopMessage(hex_message=hex_data)
+        message_from_rock_block = DecodeCloudLoopMessage(hex_message=hex_data)
         message_to_write = message_from_rock_block.recipient_list + \
                            [message_from_rock_block.message_subject, message_from_rock_block.message]
         message_file_name = "Inbox/" + datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".txt"
