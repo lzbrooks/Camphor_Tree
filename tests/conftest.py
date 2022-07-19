@@ -72,17 +72,17 @@ def mock_save_gmail_message_to_file(mocker):
 
 @pytest.fixture
 def mock_cloud_loop_message_set_up_hex_encoded_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.CloudLoopMessage.set_up_hex_encoded_message")
+    return mocker.patch("apis.camphor_tree_api.DecodeCloudLoopMessage.set_up_hex_encoded_message")
 
 
 @pytest.fixture
 def mock_cloud_loop_message_set_up_message_to_hex_encode(mocker):
-    return mocker.patch("apis.camphor_tree_api.CloudLoopMessage.set_up_message_to_hex_encode")
+    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.set_up_message_to_hex_encode")
 
 
 @pytest.fixture
 def mock_cloud_loop_message_send_cloud_loop_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.CloudLoopMessage.send_cloud_loop_message")
+    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.send_cloud_loop_message")
 
 #
 # Rock Block API Mocks

@@ -178,12 +178,6 @@ class GMailMessage:
 
 
 class GMailMessageSend(GMailMessage):
-    def __init__(self, google_client_id=None, google_client_secret=None,
-                 message_to=None, message_from=None, message_subject=None, message_text=None):
-        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret,
-                              message_to=message_to, message_from=message_from, message_subject=message_subject,
-                              message_text=message_text)
-
     def gmail_create_message(self):
         if self.message_to:
             message = MIMEMultipart()
@@ -209,12 +203,6 @@ class GMailMessageSend(GMailMessage):
 
 
 class GMailMessageGet(GMailMessage):
-    def __init__(self, google_client_id=None, google_client_secret=None,
-                 message_to=None, message_from=None, message_subject=None, message_text=None):
-        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret,
-                              message_to=message_to, message_from=message_from, message_subject=message_subject,
-                              message_text=message_text)
-
     def get_new_gmail_message(self):
         return self.new_gmail_message
 
@@ -261,12 +249,6 @@ class GMailMessageGet(GMailMessage):
 
 
 class GMailMessageRefresh(GMailMessage):
-    def __init__(self, google_client_id=None, google_client_secret=None,
-                 message_to=None, message_from=None, message_subject=None, message_text=None):
-        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret,
-                              message_to=message_to, message_from=message_from, message_subject=message_subject,
-                              message_text=message_text)
-
     def get_refresh_token(self, auth_code):
         print("Getting GMail Refresh Token...")
         url = "https://oauth2.googleapis.com/token"

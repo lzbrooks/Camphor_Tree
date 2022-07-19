@@ -13,7 +13,6 @@ class TestCamphorTreeApi:
                                             mock_cloud_loop_message_send_cloud_loop_message):
         test_server_option = "Satsuki"
         send_status = send_satellite_message("test_email", "test_info_level", "test_message_body", test_server_option)
-        assert mock_cloud_loop_message_set_up_hex_encoded_message.called
         assert mock_cloud_loop_message_set_up_message_to_hex_encode.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
         assert send_status == 'Send Success'
@@ -61,7 +60,6 @@ class TestCamphorTreeApi:
         mock_gmail_api_gmail_get_message_by_id.return_value = ("message_from", "message_subject", "message_text")
 
         relay_email_message_to_cloud_loop()
-        assert mock_cloud_loop_message_set_up_hex_encoded_message.called
         assert mock_cloud_loop_message_set_up_message_to_hex_encode.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
 

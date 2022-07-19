@@ -1,14 +1,14 @@
 import json
 
-from apis.cloud_loop_api import CloudLoopMessage
-from apis.google_api import GMailMessageGet, GMailMessageSend
+from apis.cloud_loop_api import HexEncodeForCloudLoop, DecodeCloudLoopMessage
+from apis.google_api import GMailMessage, GMailMessageGet, GMailMessageSend
 from apis.rock_block_api import RockBlockAPI
 
 
 def send_satellite_message(email, info_level, message_body, server_option):
-    rock_block_message = CloudLoopMessage(message_from=email,
-                                          message_subject=info_level,
-                                          message_to_encode=message_body)
+    rock_block_message = HexEncodeForCloudLoop(message_from=email,
+                                               message_subject=info_level,
+                                               message_to_encode=message_body)
     if server_option == 'Satsuki':
         rock_block_message.send_cloud_loop_message()
     if server_option == 'Mei':
@@ -24,16 +24,16 @@ def relay_email_message_to_cloud_loop():
     message_for_cloud_loop.gmail_get_first_message_from_push()
     message = message_for_cloud_loop.get_new_gmail_message()
     message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
-    message_to_cloud_loop = CloudLoopMessage(message_from=message_from,
-                                             message_subject=message_subject,
-                                             message_to_encode=message_text)
+    message_to_cloud_loop = HexEncodeForCloudLoop(message_from=message_from,
+                                                  message_subject=message_subject,
+                                                  message_to_encode=message_text)
     message_to_cloud_loop.send_cloud_loop_message()
     print("POST CloudLoop Message Handled")
 
 
 def relay_cloud_loop_message_to_email(request_json_data):
     print("POST CloudLoop Ping Received")
-    message_from_cloud_loop = CloudLoopMessage(hex_message=request_json_data)
+    message_from_cloud_loop = DecodeCloudLoopMessage(hex_message=request_json_data)
     gmail_message = GMailMessageSend(message_to=message_from_cloud_loop.recipient_list,
                                      message_subject=message_from_cloud_loop.message_subject,
                                      message_text=message_from_cloud_loop.message)
