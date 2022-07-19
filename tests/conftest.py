@@ -140,22 +140,22 @@ def mock_gmail_api_set_up_set_up_message_size(mocker):
 
 @pytest.fixture
 def gmail_get_first_message_from_push(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.gmail_get_first_message_from_push")
+    return mocker.patch("apis.camphor_tree_api.GMailMessageGet.gmail_get_first_message_from_push")
 
 
 @pytest.fixture
 def mock_gmail_api_get_new_gmail_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.get_new_gmail_message")
+    return mocker.patch("apis.camphor_tree_api.GMailMessageGet.get_new_gmail_message")
 
 
 @pytest.fixture
 def mock_gmail_api_gmail_get_message_by_id(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.gmail_get_message_by_id")
+    return mocker.patch("apis.camphor_tree_api.GMailMessageGet.gmail_get_message_by_id")
 
 
 @pytest.fixture
 def mock_gmail_api_send_gmail_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.send_gmail_message")
+    return mocker.patch("apis.camphor_tree_api.GMailMessageSend.send_gmail_message")
 
 #
 # Other Function Mocks

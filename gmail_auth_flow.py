@@ -1,7 +1,6 @@
 from flask import Flask, request, redirect
 
-from apis.google_api import GMailMessage
-
+from apis.google_api import GMailMessage, GMailMessageRefresh
 
 app = Flask(__name__)
 
@@ -12,7 +11,7 @@ def console():
         print("")
         print("...Getting GMail Refresh Token...")
         auth_code = request.args.get('code')
-        gmail_message = GMailMessage()
+        gmail_message = GMailMessageRefresh()
         refresh_token = gmail_message.get_refresh_token(auth_code)
         print("")
         print("Update Heroku Environment Variable CAMPHOR_TREE_REFRESH_TOKEN with value " + refresh_token)
@@ -24,7 +23,7 @@ def console():
         print("")
         print("...Refreshing GMail Token...")
         print("Login to Google Account With CAMPHOR_TREE_EMAIL Credentials")
-        gmail_message = GMailMessage()
+        gmail_message = GMailMessageRefresh()
         return redirect(gmail_message.get_auth_code_url())
     print("")
     print("Credentials Already Written")
