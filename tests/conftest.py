@@ -105,37 +105,32 @@ def mock_rock_block_api_send_data_out(mocker):
 
 @pytest.fixture
 def mock_gmail_api_set_up_google_client_id(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.set_up_google_client_id")
+    return mocker.patch("apis.camphor_tree_api.Config.get_google_id")
 
 
 @pytest.fixture
 def mock_gmail_api_set_up_set_up_google_client_secret(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.set_up_google_client_secret")
+    return mocker.patch("apis.camphor_tree_api.Config.get_google_secret")
 
 
 @pytest.fixture
 def mock_gmail_api_set_up_set_up_refresh_token(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.set_up_refresh_token")
+    return mocker.patch("apis.camphor_tree_api.Config.get_google_refresh_token")
 
 
 @pytest.fixture
 def mock_gmail_api_set_up_set_up_google_topic(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.set_up_google_topic")
+    return mocker.patch("apis.camphor_tree_api.Config.get_google_topic")
 
 
 @pytest.fixture
-def mock_gmail_api_set_up_set_up_email_recipient(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.set_up_email_recipient")
-
-
-@pytest.fixture
-def mock_gmail_api_set_up_set_up_email_sender(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.set_up_email_sender")
+def mock_gmail_api_set_up_set_up_email(mocker):
+    return mocker.patch("apis.camphor_tree_api.Config.get_email")
 
 
 @pytest.fixture
 def mock_gmail_api_set_up_set_up_message_size(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessage.set_up_message_size")
+    return mocker.patch("apis.camphor_tree_api.Config.get_max_message_size")
 
 
 @pytest.fixture
