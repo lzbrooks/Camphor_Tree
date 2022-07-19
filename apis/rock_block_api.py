@@ -46,6 +46,7 @@ class RockBlockAPI:
             self.talk_to_rock_block()
 
 
+# TODO: break out into functions, perhaps a small class
 if __name__ == "__main__":
     rock_block_ping = RockBlockAPI()
     status_of_mailbox = rock_block_ping.talk_to_rock_block()

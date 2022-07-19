@@ -15,6 +15,10 @@ from config import Config
 #     'hex_message': request.json()['data']  # hex-encoded
 # }
 
+# TODO: split into two classes
+# TODO: one for hex encoding, one for hex decoding
+# TODO: HexEncodeCloudLoopMessage
+# TODO: HexDecodeCloudLoopMessage
 class CloudLoopMessage:
     def __init__(self, hex_message=None, message_from=None, message_subject=None, message_to_encode=None):
         self.hex_message = None
