@@ -5,6 +5,7 @@ from apis.google_api import GMailMessage, GMailMessageRefresh
 app = Flask(__name__)
 
 
+# TODO: test
 @app.route('/', methods=['GET', 'POST'])
 def console():
     if request.args and 'code' in request.args:

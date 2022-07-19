@@ -1,9 +1,8 @@
 import json
 
 from apis.cloud_loop_api import HexEncodeForCloudLoop, DecodeCloudLoopMessage
-from apis.google_api import GMailMessage, GMailMessageGet, GMailMessageSend
+from apis.google_api import GMailMessageGet, GMailMessageSend
 from apis.rock_block_api import RockBlockAPI
-from config import Config
 
 
 def send_satellite_message(email, info_level, message_body, server_option):

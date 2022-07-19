@@ -4,7 +4,7 @@ from apis.camphor_tree_api import relay_email_message_to_cloud_loop, \
     relay_cloud_loop_message_to_email, send_satellite_message, get_latest_gmail_message_text, message_text_is_new
 from forms.EmailForm import EmailForm
 from forms.LoginForm import LoginForm
-from config import Config
+from config.config import Config
 
 app = Flask(__name__)
 

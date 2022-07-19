@@ -32,6 +32,7 @@ class TestCamphorTreeApi:
                                                            mock_cloud_loop_message_send_cloud_loop_message):
         with pytest.raises(TypeError, match=r"list indices must be integers or slices, not str"):
             relay_email_message_to_cloud_loop()
+        assert mock_gmail_api_set_up_set_up_message_size.called
         assert not mock_cloud_loop_message_set_up_message_to_hex_encode.called
         assert not mock_cloud_loop_message_send_cloud_loop_message.called
 
@@ -45,6 +46,7 @@ class TestCamphorTreeApi:
         mock_gmail_api_gmail_get_message_by_id.return_value = ("message_from", "message_subject", "message_text")
 
         relay_email_message_to_cloud_loop()
+        assert mock_gmail_api_set_up_set_up_message_size.called
         assert mock_cloud_loop_message_set_up_message_to_hex_encode.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
 
@@ -64,6 +66,7 @@ class TestCamphorTreeApi:
                                                               "test_message_subject", \
                                                               "test_message_text"
         message_text = get_latest_gmail_message_text()
+        assert mock_gmail_api_set_up_set_up_message_size.called
         assert gmail_get_first_message_from_push.called
         assert mock_gmail_api_get_new_gmail_message.called
         assert mock_gmail_api_gmail_get_message_by_id.called

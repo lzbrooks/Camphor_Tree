@@ -1,7 +1,7 @@
 import re
 import requests
 
-from config import Config
+from config.config import Config
 
 
 # rock_block_response = {

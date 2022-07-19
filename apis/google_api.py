@@ -29,7 +29,7 @@ import requests as requests
 # Set up or update a push notification watch on the given user mailbox.
 # POST
 # "/gmail/v1/users/{userId}/watch"
-from config import Config
+from config.config import Config
 
 
 class GMailMessage:

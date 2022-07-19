@@ -84,7 +84,7 @@ class Config:
         if 'CAMPHOR_TREE_SUB' in os.environ:
             return os.environ['CAMPHOR_TREE_SUB']
 
-    @classmethod
-    def get_max_message_size(cls):
+    @staticmethod
+    def get_max_message_size():
         if 'CAMPHOR_TREE_MAX_SIZE' in os.environ:
             return os.environ['CAMPHOR_TREE_MAX_SIZE']
