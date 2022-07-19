@@ -32,90 +32,17 @@ import requests as requests
 from config import Config
 
 
-# TODO: split up into separate classes for functionality
-# TODO: perhaps Auth, Send, Get, Watch
 class GMailMessage:
-    def __init__(self, google_client_id=None, google_client_secret=None,
-                 message_to=None, message_from=None, message_subject=None, message_text=None):
+    def __init__(self, google_client_id=None, google_client_secret=None):
         print("GMail Message Processing...")
+        self.google_client_id = Config.get_google_id(google_client_id)
+        self.google_client_secret = Config.get_google_secret(google_client_secret)
 
-        self.google_client_id = None
-        self.google_client_secret = None
-        self.google_topic = None
-        self.refresh_token = None
-
-        self.message_from = None
-        self.message_to = None
-
-        self.set_up_google_client_id(google_client_id)
-        self.set_up_google_client_secret(google_client_secret)
-        self.set_up_refresh_token()
-        self.set_up_google_topic()
-
-        self.set_up_email_recipient(message_to)
-        self.set_up_email_sender(message_from)
-
-        self.message_subject = message_subject
-        self.message_text = message_text
-
-        self.new_gmail_message = []
-        self.max_message_size = None
-        self.set_up_message_size()
+        self.refresh_token = Config.get_google_refresh_token()
 
         self.auth_token = None
         self.auth_expiry_format = "%m/%d/%Y, %H:%M:%S"
-
-        self.gmail_message = None
-
-        self.gmail_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
-        self.gmail_message_list_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
-        self.gmail_get_message_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/"
-        self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
         print("GMail Message Processed")
-
-    # TODO: move functionality to Config
-    # TODO: re-add to init
-    def set_up_google_client_id(self, google_client_id):
-        if google_client_id is None:
-            self.google_client_id = Config.get_google_id()
-        else:
-            self.google_client_id = google_client_id
-
-    # TODO: move functionality to Config
-    # TODO: re-add to init
-    def set_up_google_client_secret(self, google_client_secret):
-        if google_client_secret is None:
-            self.google_client_secret = Config.get_google_secret()
-        else:
-            self.google_client_secret = google_client_secret
-
-    # TODO: can be mocked as is, re-add to init
-    def set_up_google_topic(self):
-        self.google_topic = Config.get_google_topic()
-
-    # TODO: can be mocked as is, re-add to init
-    def set_up_refresh_token(self):
-        self.refresh_token = Config.get_google_refresh_token()
-
-    # TODO: move functionality to Config
-    # TODO: re-add to init
-    def set_up_email_sender(self, message_from):
-        if message_from is None:
-            self.message_from = Config.get_email()
-        else:
-            self.message_from = message_from
-
-    # TODO: move functionality to Config
-    # TODO: re-add to init
-    def set_up_email_recipient(self, message_to):
-        if message_to is None:
-            self.message_to = Config.get_email()
-        else:
-            self.message_to = message_to
-
-    # TODO: can be mocked as is, re-add to init
-    def set_up_message_size(self):
-        self.max_message_size = Config.get_max_message_size()
 
     def get_api_headers(self):
         self.get_auth_token()
@@ -178,6 +105,16 @@ class GMailMessage:
 
 
 class GMailMessageSend(GMailMessage):
+    def __init__(self, google_client_id=None, google_client_secret=None,
+                 message_to=None, message_from=None, message_subject=None, message_text=None):
+        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret)
+        self.message_to = Config.get_email(message_to)
+        self.message_from = Config.get_email(message_from)
+        self.message_subject = message_subject
+        self.message_text = message_text
+        self.gmail_message = None
+        self.gmail_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
+
     def gmail_create_message(self):
         if self.message_to:
             message = MIMEMultipart()
@@ -203,6 +140,13 @@ class GMailMessageSend(GMailMessage):
 
 
 class GMailMessageGet(GMailMessage):
+    def __init__(self, google_client_id=None, google_client_secret=None):
+        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret)
+        self.new_gmail_message = []
+        self.max_message_size = Config.get_max_message_size()
+        self.gmail_message_list_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+        self.gmail_get_message_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/"
+
     def get_new_gmail_message(self):
         return self.new_gmail_message
 
@@ -249,6 +193,11 @@ class GMailMessageGet(GMailMessage):
 
 
 class GMailMessageRefresh(GMailMessage):
+    def __init__(self, google_client_id=None, google_client_secret=None):
+        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret)
+        self.google_topic = Config.get_google_topic()
+        self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
+
     def get_refresh_token(self, auth_code):
         print("Getting GMail Refresh Token...")
         url = "https://oauth2.googleapis.com/token"
