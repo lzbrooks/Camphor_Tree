@@ -84,9 +84,7 @@ class HexEncodeForCloudLoop:
             for payload_part_number, payload in enumerate(self.payload_list):
                 print("Sending CloudLoop Message")
                 print("Sending part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
-                send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
-                url = send_message_api + self.hardware_id + \
-                      "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
+                url = self.get_cloud_loop_payload_url(payload)
                 headers = {"Accept": "application/json"}
                 print(url)
                 response = requests.get(url, headers=headers)
@@ -95,6 +93,12 @@ class HexEncodeForCloudLoop:
                 print("Sent part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
         else:
             print("No CloudLoop Message to Send")
+
+    def get_cloud_loop_payload_url(self, payload):
+        send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
+        url = send_message_api + self.hardware_id + \
+              "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
+        return url
 
 
 class DecodeCloudLoopMessage:

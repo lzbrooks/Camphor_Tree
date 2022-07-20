@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from apis.cloud_loop_api import HexEncodeForCloudLoop, DecodeCloudLoopMessage
 from apis.google_api import GMailMessageGet, GMailMessageSend
@@ -19,18 +20,7 @@ def send_satellite_message(email, info_level, message_body, server_option):
     return send_status
 
 
-def relay_email_message_to_cloud_loop():
-    message_for_cloud_loop = GMailMessageGet()
-    message_for_cloud_loop.gmail_get_first_message_from_push()
-    message = message_for_cloud_loop.get_new_gmail_message()
-    message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
-    message_to_cloud_loop = HexEncodeForCloudLoop(message_from=message_from,
-                                                  message_subject=message_subject,
-                                                  message_to_encode=message_text)
-    message_to_cloud_loop.send_cloud_loop_message()
-    print("POST CloudLoop Message Handled")
-
-
+# TODO: testing here
 def relay_cloud_loop_message_to_email(request_json_data):
     print("POST CloudLoop Ping Received")
     message_from_cloud_loop = DecodeCloudLoopMessage(hex_message=request_json_data)
@@ -60,15 +50,33 @@ def message_text_is_new(message_text, message_file_name="last_gmail_message.json
 
 
 def read_gmail_message_from_file(message_file_path):
-    with open(message_file_path, 'r') as last_gmail_message_file:
-        return json.load(last_gmail_message_file)["last_gmail_message"]
+    if Path(message_file_path).is_file():
+        with open(message_file_path, 'r') as last_gmail_message_file:
+            return json.load(last_gmail_message_file)["last_gmail_message"]
 
 
 def save_gmail_message_to_file(message_file_path, message_text):
     gmail_message_json = {"last_gmail_message": message_text}
+    write_gmail_message_to_file(gmail_message_json, message_file_path)
+    print("Saved GMail Message to " + str(message_file_path))
+
+
+def write_gmail_message_to_file(gmail_message_json, message_file_path):
     with open(message_file_path, "w") as file_object:
         json.dump(gmail_message_json, file_object)
-    print("Saved GMail Message to " + str(message_file_path))
+
+
+def relay_email_message_to_cloud_loop():
+    message_for_cloud_loop = GMailMessageGet()
+    message_for_cloud_loop.gmail_get_first_message_from_push()
+    message = message_for_cloud_loop.get_new_gmail_message()
+    message_from, message_subject, message_text = message_for_cloud_loop.gmail_get_message_by_id(message)
+    message_to_cloud_loop = HexEncodeForCloudLoop(message_from=message_from,
+                                                  message_subject=message_subject,
+                                                  message_to_encode=message_text)
+    message_to_cloud_loop.send_cloud_loop_message()
+    print("POST CloudLoop Message Handled")
+
 
 # TODO: merge dissect_messages branch here and in main
 # TODO: get google cloud account

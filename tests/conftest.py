@@ -51,6 +51,11 @@ def mock_get_latest_gmail_message_text(mocker):
 def mock_message_text_is_new(mocker):
     return mocker.patch("app.message_text_is_new")
 
+
+@pytest.fixture
+def mock_get_sister(mocker):
+    return mocker.patch("app.Config.get_sister")
+
 #
 # Camphor Tree API Mocks
 #
@@ -64,6 +69,11 @@ def mock_read_gmail_message_from_file(mocker):
 @pytest.fixture
 def mock_save_gmail_message_to_file(mocker):
     return mocker.patch("apis.camphor_tree_api.save_gmail_message_to_file")
+
+
+@pytest.fixture
+def mock_write_gmail_message_to_file(mocker):
+    return mocker.patch("apis.camphor_tree_api.write_gmail_message_to_file")
 
 #
 # Cloud Loop API Mocks
@@ -81,8 +91,38 @@ def mock_cloud_loop_message_set_up_message_to_hex_encode(mocker):
 
 
 @pytest.fixture
+def mock_cloud_loop_message_get_max_message_size(mocker):
+    return mocker.patch("apis.cloud_loop_api.Config.get_max_message_size")
+
+
+@pytest.fixture
+def mock_cloud_loop_message_get_whitelist(mocker):
+    return mocker.patch("apis.cloud_loop_api.Config.get_whitelist")
+
+
+@pytest.fixture
 def mock_cloud_loop_message_send_cloud_loop_message(mocker):
     return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.send_cloud_loop_message")
+
+
+@pytest.fixture
+def mock_cloud_loop_api_get_cloud_loop_auth_token(mocker):
+    return mocker.patch("apis.cloud_loop_api.Config.get_cloud_loop_auth_token")
+
+
+@pytest.fixture
+def mock_cloud_loop_api_get_rock_block_id(mocker):
+    return mocker.patch("apis.cloud_loop_api.Config.get_rock_block_id")
+
+
+@pytest.fixture
+def mock_cloud_loop_api_get_cloud_loop_payload_url(mocker):
+    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop.get_cloud_loop_payload_url")
+
+
+@pytest.fixture
+def mock_cloud_loop_api_requests_get(mocker):
+    return mocker.patch("apis.cloud_loop_api.requests.get")
 
 #
 # Rock Block API Mocks
@@ -97,6 +137,21 @@ def mock_rock_block_api_set_up_uart(mocker):
 @pytest.fixture
 def mock_rock_block_api_send_data_out(mocker):
     return mocker.patch("apis.camphor_tree_api.RockBlockAPI.send_data_out")
+
+
+@pytest.fixture
+def mock_rock_block_api_get_satellite_transfer(mocker):
+    return mocker.patch("apis.rock_block_api.RockBlockAPI.get_satellite_transfer")
+
+
+@pytest.fixture
+def mock_rock_block_api_set_data_out(mocker):
+    return mocker.patch("apis.rock_block_api.RockBlockAPI.set_data_out")
+
+
+@pytest.fixture
+def mock_rock_block_api_time_sleep(mocker):
+    return mocker.patch("apis.rock_block_api.time.sleep")
 
 #
 # GMail API Mocks
@@ -151,6 +206,16 @@ def mock_gmail_api_gmail_get_message_by_id(mocker):
 @pytest.fixture
 def mock_gmail_api_send_gmail_message(mocker):
     return mocker.patch("apis.camphor_tree_api.GMailMessageSend.send_gmail_message")
+
+
+@pytest.fixture
+def mock_google_api_requests_get(mocker):
+    return mocker.patch("apis.google_api.requests.get")
+
+
+@pytest.fixture
+def mock_google_api_requests_post(mocker):
+    return mocker.patch("apis.google_api.requests.post")
 
 #
 # Other Function Mocks

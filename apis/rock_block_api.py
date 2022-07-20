@@ -26,13 +26,16 @@ class RockBlockAPI:
 
     def talk_to_rock_block(self):
         print("Talking to satellite...")
-        status = self.rock_block.satellite_transfer()
+        status = self.get_satellite_transfer()
         while status[0] > 8:
             time.sleep(10)
-            status = self.rock_block.satellite_transfer()
+            self.get_satellite_transfer()
             print(status)
         print("\nDONE.")
         return status
+
+    def get_satellite_transfer(self):
+        return self.rock_block.satellite_transfer()
 
     def get_data_in(self):
         return self.rock_block.data_in
@@ -46,10 +49,7 @@ class RockBlockAPI:
             self.talk_to_rock_block()
 
 
-# TODO: break out into functions, perhaps a small class
-if __name__ == "__main__":
-    rock_block_ping = RockBlockAPI()
-    status_of_mailbox = rock_block_ping.talk_to_rock_block()
+def process_rock_block_status(status_of_mailbox):
     print(status_of_mailbox)
     if status_of_mailbox[2] == 0:
         print("No Messages Waiting")
@@ -57,7 +57,9 @@ if __name__ == "__main__":
         print("Message Received")
     print("Size in bytes of message: " + str(status_of_mailbox[4]))
     print("Number of Messages in Queue: " + str(status_of_mailbox[5]))
-    hex_data = rock_block_ping.rock_block.data_in
+
+
+def save_rock_block_hex_data_to_file(hex_data):
     print(hex_data)
     if hex_data:
         message_from_rock_block = DecodeCloudLoopMessage(hex_message=hex_data)
@@ -67,3 +69,11 @@ if __name__ == "__main__":
         with open(message_file_name, "w") as file:
             file.writelines("%s\n" % line for line in message_to_write)
         print("Message Witten To: " + message_file_name)
+
+
+if __name__ == "__main__":
+    rock_block_ping = RockBlockAPI()
+    satellite_status = rock_block_ping.talk_to_rock_block()
+    process_rock_block_status(satellite_status)
+    hex_data_in = rock_block_ping.get_data_in()
+    save_rock_block_hex_data_to_file(hex_data_in)
