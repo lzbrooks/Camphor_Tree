@@ -204,6 +204,16 @@ def mock_gmail_api_gmail_get_message_by_id(mocker):
 
 
 @pytest.fixture
+def mock_gmail_api_get_message_from_gmail_endpoint(mocker):
+    return mocker.patch("apis.camphor_tree_api.GMailMessageGet.get_message_from_gmail_endpoint")
+
+
+@pytest.fixture
+def mock_google_api_get_whitelist(mocker):
+    return mocker.patch("apis.google_api.Config.get_whitelist")
+
+
+@pytest.fixture
 def mock_gmail_api_send_gmail_message(mocker):
     return mocker.patch("apis.camphor_tree_api.GMailMessageSend.send_gmail_message")
 

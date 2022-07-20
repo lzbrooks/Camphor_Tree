@@ -158,16 +158,16 @@ class GMailMessageGet(GMailMessage):
 
     def gmail_get_message_by_id(self, message):
         get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
-        response = requests.get(get_message_endpoint, headers=self.get_api_headers())
+        response_json = self.get_message_from_gmail_endpoint(get_message_endpoint)
         print("GMail Message Attained by ID")
         message_from = None
         message_subject = None
         message_text = None
         send_message = True
-        if 'DRAFT' in response.json()['labelIds'] or 'SENT' in response.json()['labelIds']:
+        if 'DRAFT' in response_json['labelIds'] or 'SENT' in response_json['labelIds']:
             send_message = False
-        if 'payload' in response.json() and send_message:
-            message_payload = response.json()['payload']
+        if 'payload' in response_json and send_message:
+            message_payload = response_json['payload']
             for header in message_payload['headers']:
                 if header['name'] == 'From':
                     message_from = re.search(r'(?<=<).*?(?=>)', header['value']).group()
@@ -190,6 +190,10 @@ class GMailMessageGet(GMailMessage):
                         message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
         print("GMail Message Dissected")
         return message_from, message_subject, message_text
+
+    def get_message_from_gmail_endpoint(self, get_message_endpoint):
+        response = requests.get(get_message_endpoint, headers=self.get_api_headers())
+        return response.json()
 
 
 class GMailMessageRefresh(GMailMessage):
