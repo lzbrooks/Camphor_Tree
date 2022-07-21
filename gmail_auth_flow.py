@@ -20,6 +20,7 @@ def console():
         print("Please CTRL-C Out of Server")
         print("")
         return "Update Heroku Environment Variable CAMPHOR_TREE_REFRESH_TOKEN with value " + refresh_token, 200
+    # TODO: catch when Camphor_Tree/configurations.ini exists but is expired
     if not GMailMessage().read_auth_config("%m/%d/%Y, %H:%M:%S"):
         print("")
         print("...Refreshing GMail Token...")

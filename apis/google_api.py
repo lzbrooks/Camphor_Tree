@@ -67,6 +67,9 @@ class GMailMessage:
     def read_auth_config(auth_expiry_format):
         config_file = configparser.ConfigParser()
         if config_file.read("configurations.ini"):
+            print("Credentials File Found")
+            print(config_file["AuthConfig"]["token"])
+            print(config_file["AuthConfig"]["expires"])
             config_file.read("configurations.ini")
             return {
                 "AuthConfig": {
@@ -75,6 +78,7 @@ class GMailMessage:
                                                  auth_expiry_format)
                 }
             }
+        print("Credentials File Not Found")
 
     def check_auth_token_expired(self):
         print("Checking GMail Auth Token Expiry...")
