@@ -16,6 +16,7 @@ class Config:
         else:
             return 'satsuki'
 
+    # TODO: test
     @staticmethod
     def get_relay_switch():
         # CAMPHOR_TREE_RELAY=True
@@ -26,9 +27,11 @@ class Config:
             return True
 
     @staticmethod
-    def get_email():
-        if 'CAMPHOR_TREE_EMAIL' in os.environ:
-            return os.environ['CAMPHOR_TREE_EMAIL']
+    def get_email(message_from=None):
+        if not message_from:
+            if 'CAMPHOR_TREE_EMAIL' in os.environ:
+                return os.environ['CAMPHOR_TREE_EMAIL']
+        return message_from
 
     @staticmethod
     def get_whitelist():
@@ -43,14 +46,18 @@ class Config:
             return whitelist
 
     @staticmethod
-    def get_google_secret():
-        if 'CAMPHOR_TREE_SECRET' in os.environ:
-            return os.environ['CAMPHOR_TREE_SECRET']
+    def get_google_secret(google_client_secret=None):
+        if not google_client_secret:
+            if 'CAMPHOR_TREE_SECRET' in os.environ:
+                return os.environ['CAMPHOR_TREE_SECRET']
+        return google_client_secret
 
     @staticmethod
-    def get_google_id():
-        if 'CAMPHOR_TREE_ID' in os.environ:
-            return os.environ['CAMPHOR_TREE_ID']
+    def get_google_id(google_client_id=None):
+        if not google_client_id:
+            if 'CAMPHOR_TREE_ID' in os.environ:
+                return os.environ['CAMPHOR_TREE_ID']
+        return google_client_id
 
     @staticmethod
     def get_info_levels():
@@ -87,7 +94,7 @@ class Config:
         if 'CAMPHOR_TREE_SUB' in os.environ:
             return os.environ['CAMPHOR_TREE_SUB']
 
-    @classmethod
-    def get_max_message_size(cls):
+    @staticmethod
+    def get_max_message_size():
         if 'CAMPHOR_TREE_MAX_SIZE' in os.environ:
             return os.environ['CAMPHOR_TREE_MAX_SIZE']
