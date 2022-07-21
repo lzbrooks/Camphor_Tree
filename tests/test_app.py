@@ -51,7 +51,6 @@ class TestAppConsoleFlow:
         assert b'Send Email' in response.data
         assert b'Send Success' in response.data
 
-    # TODO: test
     def test_email_page_valid_email_no_relay(self, client,
                                              mock_get_relay_switch,
                                              mock_send_satellite_message):
@@ -142,7 +141,6 @@ class TestAppConsoleFlow:
         assert response.status_code == 200
         assert response.data == b'Success'
 
-    # TODO: test
     def test_relay_valid_sub_email_ping_no_relay(self, client,
                                                  mock_get_google_sub,
                                                  mock_get_latest_gmail_message_text,
