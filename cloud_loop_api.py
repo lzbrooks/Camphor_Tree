@@ -1,8 +1,23 @@
+from datetime import datetime
 import re
+from typing import Optional, Union
 import requests
+from typing_extensions import TypedDict
 
 from config import Config
+from encoder.default_encoder import DefaultEncoder
+from encoder.encoder import Encoder
+from types_ import DefaultEmailChunkHeader, Email
 
+class RockBlockResponse(TypedDict):
+    imei: int
+    serial_number: int
+    mo_message_number: int
+    transmit_time: datetime
+    iridium_latitude: float
+    iridium_longitude: float
+    iridium_km_acc: int
+    hex_message: str
 
 # rock_block_response = {
 #     'imei': request.json()['imei'],  # integer
@@ -16,11 +31,12 @@ from config import Config
 # }
 
 class CloudLoopMessage:
-    def __init__(self, hex_message=None, message_from=None, message_subject=None, message_to_encode=None):
+    def __init__(self, hex_message=None, message_from=None, message_subject=None, message_to_encode=None, encoder:Encoder = DefaultEncoder()):
         self.message_subject = None
         self.auth_token = None
         self.hardware_id = None
         self.message_to_encode = None
+        self.encoder = encoder
         self.message_from = None
         self.payload_list = None
         self.recipient_list = []
@@ -31,7 +47,7 @@ class CloudLoopMessage:
             print("Hex Message Processing...")
             self.hex_message = hex_message
             self.decoded_message = None
-            self.decode_hex_message()
+            self.decoded_message = self.decode_hex_message()
             self.split_recipient()
             print("Hex Message Processed")
         # Message to be Hex Encoded
@@ -45,15 +61,19 @@ class CloudLoopMessage:
             else:
                 self.message_from = [message_from]
             self.message_subject = message_subject
-            self.payload_list = self.get_payload()
             print("Message Encoded")
 
-    def decode_hex_message(self):
+    def decode_hex_message(self, hex_message: Union[bytes,str]) -> Optional[str]:
         # From JSON payload hex string to bytes
-        if not isinstance(self.hex_message, bytes):
+        if not isinstance(hex_message, bytes):
             print("Changing Hex to Bytes")
-            self.hex_message = bytes.fromhex(self.hex_message)
-        self.decoded_message = self.hex_message.decode()
+            hex_message = bytes.fromhex(self.hex_message)
+        chunk = self.encoder.decode_email_chunk(self.hex_message)
+        if isinstance(chunk, DefaultEmailChunkHeader):
+            return chunk.message
+        else:
+            print("Warning: email chunk header decode skipped because chunk header is binary")
+        
 
     def split_recipient(self):
         message_parts = self.decoded_message.split(",")
@@ -120,37 +140,22 @@ class CloudLoopMessage:
             if email_address == email:
                 return contact_number
 
-    def get_payload(self):
-        length_of_message_from = len(self.message_from[0]) * len(self.message_from)
-        max_chunk_size = int(Config.get_max_message_size()) - length_of_message_from - len(self.message_subject)
-        total_message_length = len(self.message_to_encode)
-        if total_message_length > max_chunk_size:
-            self.message_to_encode = [self.message_to_encode[i: i + max_chunk_size]
-                                      for i in range(0, total_message_length, max_chunk_size)]
-        else:
-            self.message_to_encode = [self.message_to_encode]
-        print("Number of Message Chunks: " + str(len(self.message_to_encode)))
-        self.message_from = CloudLoopMessage.email_to_contact_number(self.message_from)
-        payload_list = []
-        for part_number, message_text in enumerate(self.message_to_encode):
-            payload = ""
-            for sender in self.message_from:
-                payload += sender + ","
-            payload += self.message_subject
-            payload += " (" + str(part_number + 1) + "/" + str(len(self.message_to_encode)) + ")" + ","
-            payload += message_text
-            payload = payload.replace('\r', '').replace('\n', '')
-            payload_list.append(payload)
-        return payload_list
-
     def send_cloud_loop_message(self):
         if self.message_to_encode:
-            for payload_part_number, payload in enumerate(self.payload_list):
+            for payload_part_number, payload in enumerate(
+                self.encoder.encode_email(
+                    Email(
+                        sender_or_recipient=self.message_from,
+                        subject=self.message_subject,
+                        body=self.message
+                        )
+                    )
+                ):
                 print("Sending CloudLoop Message")
                 print("Sending part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
                 send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
                 url = send_message_api + self.hardware_id + \
-                      "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
+                      "&payload=" + payload + "&token=" + self.auth_token
                 headers = {"Accept": "application/json"}
                 print(url)
                 response = requests.get(url, headers=headers)
