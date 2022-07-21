@@ -1,5 +1,6 @@
 import os
-
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./camphor-tree-server-creds.json" # make this part of deploy
+# use this to write: https://devdojo.com/bryanborge/adding-google-cloud-credentials-to-heroku
 
 class Config:
     @staticmethod
@@ -41,6 +42,8 @@ class Config:
                 email_val = email.split(",")[1]
                 whitelist[email_key] = email_val
             return whitelist
+        else:
+            raise Exception("Could not find value for `CAMPHOR_TREE_WHITELIST`. Execution cannot continue.")
 
     @staticmethod
     def get_google_secret():
@@ -89,5 +92,8 @@ class Config:
 
     @classmethod
     def get_max_message_size(cls):
-        if 'CAMPHOR_TREE_MAX_SIZE' in os.environ:
-            return os.environ['CAMPHOR_TREE_MAX_SIZE']
+        return os.environ.get("CAMPHOR_TREE_MAX_MESSAGE_SIZE", "270")
+    
+    @classmethod
+    def get_bucket(cls):
+        return os.environ.get("BUCKET","camphor-tree-production")

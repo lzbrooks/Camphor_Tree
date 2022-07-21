@@ -19,6 +19,14 @@ git clone git@github.com:lzbrooks/Camphor_Tree.git
 - GMail publisher to Topic
 - Push HTTP POST subscribe Satsuki server url to Topic
 
+## Set up google cloud storage
+- Create a google cloud storage bucket for production
+- Add that bucket name to environment variable `BUCKET`
+- Create a google service account that can write to the bucket
+- Download google service account credentials
+- Add environment variable `GOOGLE_APPLICATION_CREDENTIALS` that points to your credentials file
+- (optional) Create another bucket for use in integration testing.
+
 ## Set up ENV VARs
 Make `.env` file up one folder from `Camphor_Tree` folder
 ```commandline

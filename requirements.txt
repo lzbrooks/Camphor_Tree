@@ -6,8 +6,11 @@ Werkzeug~=2.1.2
 WTForms~=3.0.1
 dnspython~=2.2.1
 email-validator~=1.2.1
+google-api-python-client==2.52.0
+google-cloud-storage==2.4.0
 idna~=3.3
 requests~=2.27.1
 gunicorn~=20.1.0
 pyserial~=3.5
 pyopenssl~=22.0.0
+typer==0.4.2
