@@ -51,6 +51,27 @@ class TestAppConsoleFlow:
         assert b'Send Email' in response.data
         assert b'Send Success' in response.data
 
+    # TODO: test
+    def test_email_page_valid_email_no_relay(self, client,
+                                             mock_get_relay_switch,
+                                             mock_send_satellite_message):
+        mock_get_relay_switch.return_value = False
+        mock_send_satellite_message.return_value = "Send Success"
+        response = client.post('/', data={"email": "satsuki@mocker.com",
+                                          "info_level": "Info",
+                                          "message_body": "Testing",
+                                          "submit-email": "Send Email"})
+        assert response.status_code == 200
+        assert b'Satsuki - Camphor Tree' in response.data
+        assert b'Email Address' in response.data
+        assert b'Info Level' in response.data
+        assert b'Emergency' in response.data
+        assert b'Urgent' in response.data
+        assert b'value="Info"' in response.data
+        assert b'Message Body' in response.data
+        assert b'Send Email' in response.data
+        assert b'Relay Disabled' in response.data
+
     def test_email_page_short_invalid_email(self, client):
         response = client.post('/', data={"email": "nope",
                                           "info_level": "Info",
@@ -120,6 +141,23 @@ class TestAppConsoleFlow:
                                           })
         assert response.status_code == 200
         assert response.data == b'Success'
+
+    # TODO: test
+    def test_relay_valid_sub_email_ping_no_relay(self, client,
+                                                 mock_get_google_sub,
+                                                 mock_get_latest_gmail_message_text,
+                                                 mock_message_text_is_new,
+                                                 mock_get_relay_switch,
+                                                 mock_relay_email_message_to_cloud_loop):
+        mock_get_google_sub.return_value = "test_sub"
+        mock_message_text_is_new.return_value = True
+        mock_get_relay_switch.return_value = False
+        response = client.post('/', json={"subscription": "test_sub",
+                                          "message":
+                                              {"data": "test_data"}
+                                          })
+        assert response.status_code == 200
+        assert response.data == b'Bounced This One'
 
     def test_bounce_duplicate_sub_email_ping(self, client,
                                              mock_get_google_sub,

@@ -12,6 +12,7 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def console():
     server_option = Config.get_sister()
+    relay_on = Config.get_relay_switch()
     login_form = LoginForm(request.form)
     email_form = EmailForm(request.form)
     if not request.is_json and "submit-password" in request.form and not login_form.validate():
@@ -20,9 +21,11 @@ def console():
         send_status = 'Console'
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and email_form.validate():
-        send_status = send_satellite_message(email_form.email.data,
-                                             email_form.info_level.data,
-                                             email_form.message_body.data, server_option)
+        send_status = 'Relay Disabled'
+        if relay_on:
+            send_status = send_satellite_message(email_form.email.data,
+                                                 email_form.info_level.data,
+                                                 email_form.message_body.data, server_option)
         return render_template('email_form.html', form=email_form, server_option=server_option, send_status=send_status)
     if not request.is_json and "submit-email" in request.form and not email_form.validate():
         send_status = 'Send Failure'
@@ -32,7 +35,7 @@ def console():
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
         new_message_text = get_latest_gmail_message_text()
-        if message_text_is_new(new_message_text):
+        if message_text_is_new(new_message_text) and relay_on:
             relay_email_message_to_cloud_loop()
         else:
             return "Bounced This One", 200

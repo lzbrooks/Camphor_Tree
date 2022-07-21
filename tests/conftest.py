@@ -56,6 +56,12 @@ def mock_message_text_is_new(mocker):
 def mock_get_sister(mocker):
     return mocker.patch("app.Config.get_sister")
 
+
+@pytest.fixture
+def mock_get_relay_switch(mocker):
+    return mocker.patch("app.Config.get_relay_switch")
+
+
 #
 # Camphor Tree API Mocks
 #
