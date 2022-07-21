@@ -1,7 +1,7 @@
 import pytest
 from serial import SerialException
 
-from tests.data import two_part_email
+from tests.data import two_part_email, bob_skipped_email
 
 
 class TestAppConsoleFlow:
@@ -51,7 +51,6 @@ class TestAppConsoleFlow:
         assert b'Send Email' in response.data
         assert b'Send Success' in response.data
 
-    # TODO: test
     def test_email_page_valid_email_no_relay(self, client,
                                              mock_get_relay_switch,
                                              mock_send_satellite_message):
@@ -142,7 +141,6 @@ class TestAppConsoleFlow:
         assert response.status_code == 200
         assert response.data == b'Success'
 
-    # TODO: test
     def test_relay_valid_sub_email_ping_no_relay(self, client,
                                                  mock_get_google_sub,
                                                  mock_get_latest_gmail_message_text,
@@ -416,17 +414,17 @@ class TestAppConsoleFlowIntegration:
         assert response.status_code == 200
         assert response.data == b'Success'
 
-    def test_bounce_duplicate_sub_email_ping(self, client,
-                                             mock_get_google_sub,
-                                             mock_gmail_api_set_up_set_up_message_size,
-                                             mock_google_api_requests_get,
-                                             mock_google_api_requests_post,
-                                             mock_cloud_loop_api_requests_get,
-                                             mock_gmail_api_get_message_from_gmail_endpoint,
-                                             mock_gmail_api_get_new_gmail_message,
-                                             mock_write_gmail_message_to_file,
-                                             mock_google_api_get_whitelist,
-                                             mock_read_gmail_message_from_file):
+    def test_bounce_duplicate_sub_email_ping_two_parts(self, client,
+                                                       mock_get_google_sub,
+                                                       mock_gmail_api_set_up_set_up_message_size,
+                                                       mock_google_api_requests_get,
+                                                       mock_google_api_requests_post,
+                                                       mock_cloud_loop_api_requests_get,
+                                                       mock_gmail_api_get_message_from_gmail_endpoint,
+                                                       mock_gmail_api_get_new_gmail_message,
+                                                       mock_write_gmail_message_to_file,
+                                                       mock_google_api_get_whitelist,
+                                                       mock_read_gmail_message_from_file):
         mock_get_google_sub.return_value = "test_sub"
         mock_gmail_api_set_up_set_up_message_size.return_value = "100"
         mock_gmail_api_get_new_gmail_message.return_value = two_part_email.email
@@ -436,6 +434,61 @@ class TestAppConsoleFlowIntegration:
                                                          "something gets lost I'll forward it,\r\nbut so far the new " \
                                                          "integration has not failed to deliver anything\r\n"
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        response = client.post('/', json={"subscription": "test_sub",
+                                          "message":
+                                              {"data": "test_data"}
+                                          })
+        assert response.status_code == 200
+        assert response.data == b'Bounced This One'
+
+    def test_relay_valid_sub_email_ping_no_parts(self, client,
+                                                 mock_get_google_sub,
+                                                 mock_gmail_api_set_up_set_up_message_size,
+                                                 mock_google_api_requests_get,
+                                                 mock_google_api_requests_post,
+                                                 mock_cloud_loop_api_requests_get,
+                                                 mock_gmail_api_get_message_from_gmail_endpoint,
+                                                 mock_gmail_api_get_new_gmail_message,
+                                                 mock_write_gmail_message_to_file,
+                                                 mock_google_api_get_whitelist):
+        mock_get_google_sub.return_value = "test_sub"
+        mock_gmail_api_get_new_gmail_message.return_value = bob_skipped_email.email
+        mock_gmail_api_get_message_from_gmail_endpoint.return_value = bob_skipped_email.email
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        response = client.post('/', json={"subscription": "test_sub",
+                                          "message":
+                                              {"data": "test_data"}
+                                          })
+        assert response.status_code == 200
+        assert response.data == b'Success'
+
+    def test_bounce_duplicate_sub_email_ping_no_parts(self, client,
+                                                      mock_get_google_sub,
+                                                      mock_gmail_api_set_up_set_up_message_size,
+                                                      mock_google_api_requests_get,
+                                                      mock_google_api_requests_post,
+                                                      mock_cloud_loop_api_requests_get,
+                                                      mock_gmail_api_get_message_from_gmail_endpoint,
+                                                      mock_gmail_api_get_new_gmail_message,
+                                                      mock_write_gmail_message_to_file,
+                                                      mock_google_api_get_whitelist,
+                                                      mock_read_gmail_message_from_file):
+        mock_get_google_sub.return_value = "test_sub"
+        mock_gmail_api_set_up_set_up_message_size.return_value = "100"
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        mock_gmail_api_get_new_gmail_message.return_value = bob_skipped_email.email
+        mock_gmail_api_get_message_from_gmail_endpoint.return_value = bob_skipped_email.email
+        mock_read_gmail_message_from_file.return_value = 'Really,\r\n\r\nSo there is no character limit for the sv ' \
+                                                         'kiki 95 address?\r\n\r\nReally...Hawaii to ' \
+                                                         'Samoa?\r\n\r\nTest Person\r\nTest Place, Test State ' \
+                                                         '12345\r\ntest_sender@gmail.com\r\nH/O: ' \
+                                                         '000-000-0000\r\nCell: 000-000-0000\r\n\r\n-----Original ' \
+                                                         'Message-----\r\nFrom: test_recipient@gmai.com [' \
+                                                         'mailto:test_recipient@gmai.com] \r\nSent: Friday, June 10, ' \
+                                                         '2022 7:54 PM\r\nTo: test_sender@gmail.com\r\nSubject: Info ' \
+                                                         '(1/1)\r\n\r\nCorrection on that last: from Hawaii to the ' \
+                                                         'Samoan islands\r\n\r\n\r\n-- \r\nThis email has been ' \
+                                                         'checked for viruses by AVG.\r\nhttps://www.avg.com\r\n\r\n'
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
                                               {"data": "test_data"}

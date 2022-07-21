@@ -20,7 +20,6 @@ def send_satellite_message(email, info_level, message_body, server_option):
     return send_status
 
 
-# TODO: testing here
 def relay_cloud_loop_message_to_email(request_json_data):
     print("POST CloudLoop Ping Received")
     message_from_cloud_loop = DecodeCloudLoopMessage(hex_message=request_json_data)
@@ -76,7 +75,3 @@ def relay_email_message_to_cloud_loop():
                                                   message_to_encode=message_text)
     message_to_cloud_loop.send_cloud_loop_message()
     print("POST CloudLoop Message Handled")
-
-
-# TODO: merge dissect_messages branch here and in main
-# TODO: get google cloud account
