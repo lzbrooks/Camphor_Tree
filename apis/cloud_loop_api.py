@@ -86,7 +86,6 @@ class HexEncodeForCloudLoop:
                 print("Sending part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
                 url = self.get_cloud_loop_payload_url(payload)
                 headers = {"Accept": "application/json"}
-                print(url)
                 response = requests.get(url, headers=headers)
                 print(response)
                 print(payload)
