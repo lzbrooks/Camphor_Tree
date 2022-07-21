@@ -1,6 +1,6 @@
 from wtforms import Form, StringField, TextAreaField, validators, RadioField
 
-from config import Config
+from config.config import Config
 
 
 class EmailForm(Form):

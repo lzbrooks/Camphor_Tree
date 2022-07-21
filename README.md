@@ -16,6 +16,7 @@ git clone git@github.com:lzbrooks/Camphor_Tree.git
 - Codebase currently tested with a RockBLOCK+
 
 ## Set up Google Pub/Sub Topic
+- Set up a free [Google Cloud](https://console.cloud.google.com/) account
 - GMail publisher to Topic
 - Push HTTP POST subscribe Satsuki server url to Topic
 

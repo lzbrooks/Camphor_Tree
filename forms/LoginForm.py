@@ -1,6 +1,6 @@
 from wtforms import Form, PasswordField, validators, ValidationError
 
-from config import Config
+from config.config import Config
 
 
 class LoginForm(Form):
