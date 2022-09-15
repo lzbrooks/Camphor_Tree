@@ -19,16 +19,58 @@ from config.config import Config
 _logger = logging.Logger(__name__)
 
 
-class GMailAPI:
-    def __init__(self, message_to=None, message_from=None, message_subject=None, message_text=None):
+class GMailAuth:
+    def __init__(self, cred_file='credentials.json', token_file='token.json'):
         self.creds = None
+        self.cred_file = cred_file
+        self.token_file = token_file
         self.SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
         self.google_topic = Config.get_google_topic()
 
+    def _get_creds(self):
+        if os.path.exists(self.token_file):
+            print("Access Token File Found")
+            self.creds = Credentials.from_authorized_user_file(self.token_file, self.SCOPES)
+        else:
+            print("Access Token File Not Found")
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                print("Getting New GMail Access Token...")
+                self._google_api_refresh_access_token()
+                print("GMail Access Token Attained")
+            else:
+                raise ValueError("No Valid Refresh Token")
+            self._save_creds_to_file()
+
+    def _google_api_refresh_access_token(self):
+        self.creds.refresh(Request())
+
+    def _save_creds_to_file(self):
+        with open(self.token_file, 'w') as token:
+            token.write(self.creds.to_json())
+
+    def refresh_with_browser(self):
+        flow = InstalledAppFlow.from_client_secrets_file(
+            self.cred_file, self.SCOPES)
+        self.creds = flow.run_local_server(port=0)
+        self._save_creds_to_file()
+
+    def re_watch(self):
+        request = {
+            'labelIds': ['INBOX'],
+            'labelFilterAction': 'include',
+            'topicName': self.google_topic
+        }
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            service.users().watch(userId='me', body=request).execute()
+
+
+class GMailAPI(GMailAuth):
+    def __init__(self, message_to=None, message_from=None, message_subject=None, message_text=None,
+                 cred_file='credentials.json', token_file='token.json'):
+        GMailAuth.__init__(self, cred_file=cred_file, token_file=token_file)
         self.new_gmail_message = None
-
         self.max_message_size = Config.get_max_message_size()
-
         self.message_to = Config.get_email(message_to)
         self.message_from = Config.get_email(message_from)
         self.message_subject = message_subject
@@ -36,13 +78,18 @@ class GMailAPI:
         self.gmail_message = None
 
     def get_top_inbox_message(self):
+        self._get_creds()
         try:
-            with build('gmail', 'v1', credentials=self.creds) as service:
-                message_list = service.users().messages().list(userId='me', maxResults='1').execute().json()
+            message_list = self._google_api_get_top_inbox_message()
+            if 'messages' in message_list:
+                return message_list['messages'][0]
         except HttpError as error:
             print(f'An error occurred: {error}')
-        if 'messages' in message_list:
-            self.new_gmail_message = message_list['messages'][0]
+
+    def _google_api_get_top_inbox_message(self):
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            message_list = service.users().messages().list(userId='me', maxResults='1').execute().json()
+        return message_list
 
     def send_gmail_message(self):
         """Create and send an email message
@@ -51,19 +98,22 @@ class GMailAPI:
 
         Load pre-authorized user credentials from the environment
         """
-        self.get_creds()
-        self.create_gmail_message()
+        self._get_creds()
+        self._create_gmail_message()
         try:
-            with build('gmail', 'v1', credentials=self.creds) as service:
-                if self.gmail_message:
-                    print("Sending GMail Message")
-                    return (service.users().messages().send
-                                    (userId="me", body=self.gmail_message).execute())
-                print("No GMail Message to Send")
+            if self.gmail_message:
+                print("Sending GMail Message")
+                return self._google_api_send_message()
+            print("No GMail Message to Send")
         except HttpError as error:
             print(f'An error occurred: {error}')
 
-    def create_gmail_message(self):
+    def _google_api_send_message(self):
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            return (service.users().messages().send
+                    (userId='me', body=self.gmail_message).execute())
+
+    def _create_gmail_message(self):
         if self.message_to:
             message = EmailMessage()
             message['To'] = ", ".join(self.message_to)
@@ -76,17 +126,22 @@ class GMailAPI:
             }
             self.gmail_message = create_message
 
-    def gmail_get_message_by_id(self, message):
+    def get_gmail_message_by_id(self, message):
+        self._get_creds()
+        response_json = self._google_api_get_message(message)
+        print("GMail Message Attained by ID")
+        send_message = True
+        if 'DRAFT' in response_json['labelIds'] or 'SENT' in response_json['labelIds']:
+            send_message = False
+        if 'payload' in response_json and send_message:
+            return self._dissect_message(response_json["payload"])
+        print("GMail Message Dissected")
+        return None, None, None
+
+    def _google_api_get_message(self, message):
         with build('gmail', 'v1', credentials=self.creds) as service:
             response_json = service.users().messages().get(userId='me', id=str(message['id'])).execute().json()
-            print("GMail Message Attained by ID")
-            send_message = True
-            if 'DRAFT' in response_json['labelIds'] or 'SENT' in response_json['labelIds']:
-                send_message = False
-            if 'payload' in response_json and send_message:
-                return self._dissect_message(response_json["payload"])
-            print("GMail Message Dissected")
-            return None, None, None
+        return response_json
 
     def _dissect_message(self, message_payload) -> Tuple[str, str, str]:
         _logger.info(f"Dissecting message:\n{message_payload}")
@@ -125,41 +180,7 @@ class GMailAPI:
                     message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
         return message_text
 
-    def get_creds(self):
-        if os.path.exists('token.json'):
-            print("Access Token File Found")
-            self.creds = Credentials.from_authorized_user_file('token.json', self.SCOPES)
-        else:
-            print("Access Token File Not Found")
-        if not self.creds or not self.creds.valid:
-            if self.creds and self.creds.expired and self.creds.refresh_token:
-                print("Getting New GMail Access Token...")
-                self.creds.refresh(Request())
-                print("GMail Access Token Attained")
-            else:
-                raise ValueError("No Valid Refresh Token")
-            self.save_creds_to_file()
-
-    def save_creds_to_file(self):
-        with open('token.json', 'w') as token:
-            token.write(self.creds.to_json())
-
-    def refresh_with_browser(self):
-        flow = InstalledAppFlow.from_client_secrets_file(
-            'credentials.json', self.SCOPES)
-        self.creds = flow.run_local_server(port=0)
-        self.save_creds_to_file()
-
-    def re_watch(self):
-        request = {
-            'labelIds': ['INBOX'],
-            'labelFilterAction': 'include',
-            'topicName': self.google_topic
-        }
-        with build('gmail', 'v1', credentials=self.creds) as service:
-            service.users().watch(userId='me', body=request).execute()
-
 
 if __name__ == "__main__":
-    gmail_re_watch = GMailAPI()
+    gmail_re_watch = GMailAuth()
     gmail_re_watch.re_watch()
