@@ -85,11 +85,19 @@ class GMailAPI(GMailAuth):
                 return message_list['messages'][0]
         except HttpError as error:
             print(f'An error occurred: {error}')
+        return []
 
-    def _google_api_get_top_inbox_message(self):
-        with build('gmail', 'v1', credentials=self.creds) as service:
-            message_list = service.users().messages().list(userId='me', maxResults='1').execute().json()
-        return message_list
+    def get_gmail_message_by_id(self, message):
+        self._get_creds()
+        response_json = self._google_api_get_message(str(message['id']))
+        print("GMail Message Attained by ID")
+        send_message = True
+        if 'DRAFT' in response_json['labelIds'] or 'SENT' in response_json['labelIds']:
+            send_message = False
+        if 'payload' in response_json and send_message:
+            return self._dissect_message(response_json["payload"])
+        print("GMail Message Dissected")
+        return None, None, None
 
     def send_gmail_message(self):
         """Create and send an email message
@@ -108,11 +116,6 @@ class GMailAPI(GMailAuth):
         except HttpError as error:
             print(f'An error occurred: {error}')
 
-    def _google_api_send_message(self):
-        with build('gmail', 'v1', credentials=self.creds) as service:
-            return (service.users().messages().send
-                    (userId='me', body=self.gmail_message).execute())
-
     def _create_gmail_message(self):
         if self.message_to:
             message = EmailMessage()
@@ -125,23 +128,6 @@ class GMailAPI(GMailAuth):
                 'raw': encoded_message
             }
             self.gmail_message = create_message
-
-    def get_gmail_message_by_id(self, message):
-        self._get_creds()
-        response_json = self._google_api_get_message(message)
-        print("GMail Message Attained by ID")
-        send_message = True
-        if 'DRAFT' in response_json['labelIds'] or 'SENT' in response_json['labelIds']:
-            send_message = False
-        if 'payload' in response_json and send_message:
-            return self._dissect_message(response_json["payload"])
-        print("GMail Message Dissected")
-        return None, None, None
-
-    def _google_api_get_message(self, message):
-        with build('gmail', 'v1', credentials=self.creds) as service:
-            response_json = service.users().messages().get(userId='me', id=str(message['id'])).execute().json()
-        return response_json
 
     def _dissect_message(self, message_payload) -> Tuple[str, str, str]:
         _logger.info(f"Dissecting message:\n{message_payload}")
@@ -179,6 +165,21 @@ class GMailAPI(GMailAuth):
                         and message_from in Config.get_whitelist().values():
                     message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
         return message_text
+
+    def _google_api_get_top_inbox_message(self):
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            message_list = service.users().messages().list(userId='me', maxResults='1').execute().json()
+        return message_list
+
+    def _google_api_send_message(self):
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            return (service.users().messages().send
+                    (userId='me', body=self.gmail_message).execute())
+
+    def _google_api_get_message(self, message_id):
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            response_json = service.users().messages().get(userId='me', id=message_id).execute().json()
+        return response_json
 
 
 if __name__ == "__main__":
