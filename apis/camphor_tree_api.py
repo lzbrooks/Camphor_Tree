@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 from apis.cloud_loop_api import HexEncodeForCloudLoop, DecodeCloudLoopMessage
-from apis.google_api import GMailMessageGet, GMailMessageSend
 from apis.google_api_lib import GMailAPI
 from apis.rock_block_api import RockBlockAPI
 
@@ -21,7 +20,6 @@ def send_satellite_message(email, info_level, message_body, server_option):
     return send_status
 
 
-# TODO: Check over gmail api use
 def relay_cloud_loop_message_to_email(request_json_data):
     print("POST CloudLoop Ping Received")
     message_from_cloud_loop = DecodeCloudLoopMessage(hex_message=request_json_data)
@@ -32,7 +30,6 @@ def relay_cloud_loop_message_to_email(request_json_data):
     print("POST GMail Message Handled")
 
 
-# TODO: Check over gmail api use
 def get_latest_gmail_message_text():
     message_for_cloud_loop = GMailAPI()
     message = message_for_cloud_loop.get_top_inbox_message()
@@ -67,7 +64,6 @@ def write_gmail_message_to_file(gmail_message_json, message_file_path):
         json.dump(gmail_message_json, file_object)
 
 
-# TODO: Check over gmail api use
 def relay_email_message_to_cloud_loop():
     message_for_cloud_loop = GMailAPI()
     message = message_for_cloud_loop.get_top_inbox_message()
