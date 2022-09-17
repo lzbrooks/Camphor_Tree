@@ -32,7 +32,7 @@ class TestCamphorTreeApi:
                                                           mock_gmail_api_get_creds,
                                                           mock_cloud_loop_message_set_up_message_to_hex_encode,
                                                           mock_cloud_loop_message_send_cloud_loop_message):
-        with pytest.raises(TypeError, match=r"list indices must be integers or slices, not str"):
+        with pytest.raises(TypeError, match=r"'NoneType' object is not subscriptable"):
             relay_email_message_to_cloud_loop()
         assert mock_gmail_api_get_message_size.called
         assert not mock_cloud_loop_message_set_up_message_to_hex_encode.called
