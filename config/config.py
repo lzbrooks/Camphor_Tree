@@ -64,6 +64,22 @@ class Config:
         info_levels = [('Emergency', 'Emergency'), ('Urgent', 'Urgent'), ('Info', 'Info')]
         return info_levels
 
+    # TODO: test
+    @staticmethod
+    def get_google_client_credentials_file():
+        if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ:
+            return os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+        else:
+            return 'credentials.json'
+
+    # TODO: test
+    @staticmethod
+    def get_google_access_token_file():
+        if 'CAMPHOR_TREE_ACCESS_TOKEN_FILE' in os.environ:
+            return os.environ['CAMPHOR_TREE_ACCESS_TOKEN_FILE']
+        else:
+            return 'token.json'
+
     @staticmethod
     def get_google_refresh_token():
         if 'CAMPHOR_TREE_REFRESH_TOKEN' in os.environ:

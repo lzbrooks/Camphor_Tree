@@ -20,10 +20,12 @@ _logger = logging.Logger(__name__)
 
 
 class GMailAuth:
-    def __init__(self, cred_file='credentials.json', token_file='token.json'):
+    def __init__(self):
         self.creds = None
-        self.cred_file = cred_file
-        self.token_file = token_file
+        # TODO: test
+        self.cred_file = Config.get_google_client_credentials_file()
+        # TODO: test
+        self.token_file = Config.get_google_access_token_file()
         self.SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
         self.google_topic = Config.get_google_topic()
 
@@ -82,9 +84,8 @@ class GMailAuth:
 
 
 class GMailAPI(GMailAuth):
-    def __init__(self, message_to=None, message_from=None, message_subject=None, message_text=None,
-                 cred_file='credentials.json', token_file='token.json'):
-        GMailAuth.__init__(self, cred_file=cred_file, token_file=token_file)
+    def __init__(self, message_to=None, message_from=None, message_subject=None, message_text=None):
+        GMailAuth.__init__(self)
         self.new_gmail_message = None
         self.max_message_size = Config.get_max_message_size()
         self.message_to = Config.get_email(message_to)

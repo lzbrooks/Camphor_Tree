@@ -50,6 +50,7 @@ nano .env
 e.g.
 ```commandline
 export GOOGLE_APPLICATION_CREDENTIALS='...' # file path to credentials.json
+export CAMPHOR_TREE_ACCESS_TOKEN_FILE='...' # file path to token.json
 export CAMPHOR_TREE_AUTH_TOKEN='...'
 export CAMPHOR_TREE_EMAIL='...'
 export CAMPHOR_TREE_HARDWARE_ID='...'

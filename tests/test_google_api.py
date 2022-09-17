@@ -25,8 +25,9 @@ class TestGMailAuth:
         token_dict = dummy_unexpired_access_token.token_dict
         with open(tmp_token_file, "w") as test_file_object:
             json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
         mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
-        test_gmail_auth = GMailAuth(token_file=tmp_token_file)
+        test_gmail_auth = GMailAuth()
         test_gmail_auth.re_watch()
         assert mock_gmail_auth_google_api_execute_request.called
 
@@ -43,7 +44,7 @@ class TestGMailAuth:
             'topicName': 'test_topic'
         })
 
-    def test_refresh_with_browser_valid_creds(self, tmp_path,
+    def test_refresh_with_browser_valid_creds(self, mocker, tmp_path,
                                                      mock_gmail_api_get_google_topic,
                                                      mock_gmail_auth_google_api_refresh_with_browser):
         tmp_cred_file = tmp_path / 'credentials.json'
@@ -57,7 +58,9 @@ class TestGMailAuth:
         test_scopes = ['https://www.googleapis.com/auth/gmail.modify']
         mock_gmail_auth_google_api_refresh_with_browser.return_value = \
             Credentials.from_authorized_user_file(tmp_token_file.as_posix(), test_scopes)
-        test_gmail_auth = GMailAuth(cred_file=tmp_cred_file, token_file=tmp_token_file)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        test_gmail_auth = GMailAuth()
         test_gmail_auth.refresh_with_browser()
         assert mock_gmail_auth_google_api_refresh_with_browser.called
 
@@ -81,38 +84,42 @@ class TestGMailAuth:
         token_dict = dummy_expired_access_token.token_dict
         with open(tmp_token_file, "w") as test_file_object:
             json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
         mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
-        test_gmail_auth = GMailAuth(token_file=tmp_token_file)
+        test_gmail_auth = GMailAuth()
         test_gmail_auth._get_creds()
         assert mock_gmail_auth_google_api_refresh_access_token_local.called
 
-    def test_get_creds_no_token_file(self, tmp_path,
+    def test_get_creds_no_token_file(self, mocker, tmp_path,
                                      mock_gmail_api_get_google_topic,
                                      mock_gmail_auth_google_api_refresh_access_token_local):
         tmp_token_file = tmp_path / 'token.json'
-        test_gmail_auth = GMailAuth(token_file=tmp_token_file)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        test_gmail_auth = GMailAuth()
         with pytest.raises(ValueError, match=r"No Valid Refresh Token"):
             test_gmail_auth._get_creds()
 
-    def test_get_creds_expired_token_file(self, tmp_path,
+    def test_get_creds_expired_token_file(self, mocker, tmp_path,
                                           mock_gmail_api_get_google_topic,
                                           mock_gmail_auth_google_api_refresh_access_token_local):
         tmp_token_file = tmp_path / 'token.json'
         token_dict = dummy_expired_access_token.token_dict
         with open(tmp_token_file, "w") as test_file_object:
             json.dump(token_dict, test_file_object)
-        test_gmail_auth = GMailAuth(token_file=tmp_token_file)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        test_gmail_auth = GMailAuth()
         test_gmail_auth._get_creds()
         assert mock_gmail_auth_google_api_refresh_access_token_local.called
 
-    def test_get_creds_unexpired_token_file(self, tmp_path,
+    def test_get_creds_unexpired_token_file(self, mocker, tmp_path,
                                             mock_gmail_api_get_google_topic,
                                             mock_gmail_auth_google_api_refresh_access_token_local):
         tmp_token_file = tmp_path / 'token.json'
         token_dict = dummy_unexpired_access_token.token_dict
         with open(tmp_token_file, "w") as test_file_object:
             json.dump(token_dict, test_file_object)
-        test_gmail_auth = GMailAuth(token_file=tmp_token_file)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        test_gmail_auth = GMailAuth()
         test_gmail_auth._get_creds()
         assert not mock_gmail_auth_google_api_refresh_access_token_local.called
 
