@@ -22,9 +22,7 @@ _logger = logging.Logger(__name__)
 class GMailAuth:
     def __init__(self):
         self.creds = None
-        # TODO: test
         self.cred_file = Config.get_google_client_credentials_file()
-        # TODO: test
         self.token_file = Config.get_google_access_token_file()
         self.SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
         self.google_topic = Config.get_google_topic()
@@ -114,12 +112,11 @@ class GMailAPI(GMailAuth):
 
     def send_gmail_message(self):
         """Create and send an email message
-        Print the returned  message id
         Returns: Message object, including message id
-
         Load pre-authorized user credentials from the environment
         """
         self._get_creds()
+        self._create_gmail_message()
         if self.gmail_message:
             print("Sending GMail Message")
             return self._google_api_send_message()

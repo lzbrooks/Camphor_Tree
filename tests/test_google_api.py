@@ -1,5 +1,6 @@
 import json
 import os
+from base64 import urlsafe_b64decode
 
 import pytest
 
@@ -45,8 +46,8 @@ class TestGMailAuth:
         })
 
     def test_refresh_with_browser_valid_creds(self, mocker, tmp_path,
-                                                     mock_gmail_api_get_google_topic,
-                                                     mock_gmail_auth_google_api_refresh_with_browser):
+                                              mock_gmail_api_get_google_topic,
+                                              mock_gmail_auth_google_api_refresh_with_browser):
         tmp_cred_file = tmp_path / 'credentials.json'
         tmp_token_file = tmp_path / 'token.json'
         credentials_dict = dummy_client_credentials.credentials_dict
@@ -125,6 +126,215 @@ class TestGMailAuth:
 
 
 class TestGMailApi:
+    def test_get_top_inbox_message_valid_message(self, mocker, tmp_path,
+                                                 mock_gmail_api_google_api_refresh_access_token_local,
+                                                 mock_gmail_api_google_api_execute_request):
+        mock_gmail_api_google_api_execute_request.return_value = {"messages": [bob_skipped_email.email]}
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        test_gmail_api = GMailAPI()
+        top_message = test_gmail_api.get_top_inbox_message()
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert mock_gmail_api_google_api_execute_request.called
+        assert top_message == bob_skipped_email.email
+
+    def test_get_top_inbox_message_no_message(self, mocker, tmp_path,
+                                              mock_gmail_api_google_api_refresh_access_token_local,
+                                              mock_gmail_api_google_api_execute_request):
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        test_gmail_api = GMailAPI()
+        top_message = test_gmail_api.get_top_inbox_message()
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert mock_gmail_api_google_api_execute_request.called
+        assert not top_message
+
+    def test_get_gmail_message_by_id_valid_message(self, mocker, tmp_path,
+                                                   mock_gmail_api_get_message_size,
+                                                   mock_google_api_get_whitelist,
+                                                   mock_gmail_api_google_api_refresh_access_token_local,
+                                                   mock_gmail_api_google_api_execute_request):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        mock_gmail_api_google_api_execute_request.return_value = bob_skipped_email.email
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        test_gmail_api = GMailAPI()
+        message_from, message_subject, message_text = test_gmail_api.get_gmail_message_by_id(bob_skipped_email.email)
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert mock_gmail_api_google_api_execute_request.called
+        assert message_from == "test_sender@gmail.com"
+        assert message_subject == "RE: Info (1/1)"
+        assert message_text == 'Really,\r\n\r\nSo there is no character limit for the sv kiki 95 ' \
+                               'address?\r\n\r\nReally...Hawaii to Samoa?\r\n\r\nTest Person\r\nTest Place, ' \
+                               'Test State 12345\r\ntest_sender@gmail.com\r\nH/O: 000-000-0000\r\nCell: ' \
+                               '000-000-0000\r\n\r\n-----Original Message-----\r\nFrom: test_recipient@gmai.com [' \
+                               'mailto:test_recipient@gmai.com] \r\nSent: Friday, June 10, 2022 7:54 PM\r\nTo: ' \
+                               'test_sender@gmail.com\r\nSubject: Info (1/1)\r\n\r\nCorrection on that last: from ' \
+                               'Hawaii to the Samoan islands\r\n\r\n\r\n-- \r\nThis email has been checked for ' \
+                               'viruses by AVG.\r\nhttps://www.avg.com\r\n\r\n'
+
+    def test_get_gmail_message_by_id_reject_draft(self, mocker, tmp_path,
+                                                  mock_gmail_api_get_message_size,
+                                                  mock_google_api_get_whitelist,
+                                                  mock_gmail_api_google_api_refresh_access_token_local,
+                                                  mock_gmail_api_google_api_execute_request,
+                                                  mock_gmail_api_dissect_message_local):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        mock_gmail_api_google_api_execute_request.return_value = {'labelIds': ['DRAFT']}
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        test_gmail_api = GMailAPI()
+        message_from, message_subject, message_text = test_gmail_api.get_gmail_message_by_id({"id": 42})
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert mock_gmail_api_google_api_execute_request.called
+        assert not mock_gmail_api_dissect_message_local.called
+        assert not message_from
+        assert not message_subject
+        assert not message_text
+
+    def test_get_gmail_message_by_id_reject_sent(self, mocker, tmp_path,
+                                                 mock_gmail_api_get_message_size,
+                                                 mock_google_api_get_whitelist,
+                                                 mock_gmail_api_google_api_refresh_access_token_local,
+                                                 mock_gmail_api_google_api_execute_request,
+                                                 mock_gmail_api_dissect_message_local):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        mock_gmail_api_google_api_execute_request.return_value = {'labelIds': ['SENT']}
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        test_gmail_api = GMailAPI()
+        message_from, message_subject, message_text = test_gmail_api.get_gmail_message_by_id({"id": 42})
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert mock_gmail_api_google_api_execute_request.called
+        assert not mock_gmail_api_dissect_message_local.called
+        assert not message_from
+        assert not message_subject
+        assert not message_text
+
+    def test_get_gmail_message_by_id_accept_inbox(self, mocker, tmp_path,
+                                                  mock_gmail_api_get_message_size,
+                                                  mock_google_api_get_whitelist,
+                                                  mock_gmail_api_google_api_refresh_access_token_local,
+                                                  mock_gmail_api_google_api_execute_request,
+                                                  mock_gmail_api_dissect_message_local):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        mock_gmail_api_google_api_execute_request.return_value = {'labelIds': ['INBOX'], 'payload': "test_payload"}
+        mock_gmail_api_dissect_message_local.return_value = ("test_from", "test_subject", "test_text")
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        test_gmail_api = GMailAPI()
+        message_from, message_subject, message_text = test_gmail_api.get_gmail_message_by_id({"id": 42})
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert mock_gmail_api_google_api_execute_request.called
+        assert mock_gmail_api_dissect_message_local.called
+        assert message_from == "test_from"
+        assert message_subject == "test_subject"
+        assert message_text == "test_text"
+
+    def test_get_gmail_message_by_id_no_message_for_id(self, mocker, tmp_path,
+                                                       mock_gmail_api_google_api_refresh_access_token_local,
+                                                       mock_gmail_api_google_api_execute_request):
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        test_gmail_api = GMailAPI()
+        message_from, message_subject, message_text = test_gmail_api.get_gmail_message_by_id(bob_skipped_email.email)
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert mock_gmail_api_google_api_execute_request.called
+        assert not message_from
+        assert not message_subject
+        assert not message_text
+
+    def test_send_gmail_message_to_valid_address(self, mocker, tmp_path,
+                                                 mock_gmail_api_get_message_size,
+                                                 mock_google_api_get_whitelist,
+                                                 mock_gmail_api_google_api_refresh_access_token_local,
+                                                 mock_gmail_api_google_api_execute_request):
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_EMAIL": "test_sender@gmail.com"})
+        test_gmail_api = GMailAPI(message_to=["test_receiver@gmail.com"],
+                                  message_from=None,
+                                  message_subject="RE: Info (1/1)",
+                                  message_text="test_text")
+        test_gmail_api.send_gmail_message()
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert mock_gmail_api_google_api_execute_request.called
+        print(urlsafe_b64decode(test_gmail_api.gmail_message['raw']))
+        sent_message = urlsafe_b64decode(test_gmail_api.gmail_message['raw']).decode()
+        assert "To: test_receiver@gmail.com\n" in sent_message
+        assert "From: test_sender@gmail.com\n" in sent_message
+        assert "Subject: RE: Info (1/1)\n" in sent_message
+        assert 'Content-Type: text/plain; charset="utf-8"\nContent-Transfer-Encoding: 7bit\nMIME-Version: ' \
+               '1.0\n\ntest_text\n' in sent_message
+
     def test__dissect_message__no_parts(self, mock_gmail_api_get_message_size,
                                         mock_google_api_get_whitelist):
         mock_gmail_api_get_message_size.return_value = '250'

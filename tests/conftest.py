@@ -244,6 +244,30 @@ def mock_gmail_auth_google_api_refresh_access_token(mocker):
     return mocker.patch("apis.camphor_tree_api.GMailAPI._google_api_refresh_access_token")
 
 #
+# GMail API Mocks LOCAL
+#
+
+
+@pytest.fixture
+def mock_gmail_api_get_creds_local(mocker):
+    return mocker.patch("apis.google_api_lib.GMailAPI._get_creds")
+
+
+@pytest.fixture
+def mock_gmail_api_dissect_message_local(mocker):
+    return mocker.patch("apis.google_api_lib.GMailAPI._dissect_message")
+
+
+@pytest.fixture
+def mock_gmail_api_google_api_execute_request(mocker):
+    return mocker.patch("apis.google_api_lib.GMailAPI._google_api_execute_request")
+
+
+@pytest.fixture
+def mock_gmail_api_google_api_refresh_access_token_local(mocker):
+    return mocker.patch("apis.google_api_lib.GMailAPI._google_api_refresh_access_token")
+
+#
 # GMail Auth Mocks LOCAL
 #
 
