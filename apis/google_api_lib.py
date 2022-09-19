@@ -43,6 +43,9 @@ class GMailAuth:
         self._save_creds_to_file()
 
     def _get_creds(self):
+        """Set self.creds
+        Requires: GOOGLE_APPLICATION_CREDENTIALS env var set to credentials.json file path
+        """
         if os.path.exists(self.token_file):
             print("Access Token File Found")
             self.creds = Credentials.from_authorized_user_file(self.token_file, self.SCOPES)
@@ -84,12 +87,12 @@ class GMailAuth:
 class GMailAPI(GMailAuth):
     def __init__(self, message_to=None, message_from=None, message_subject=None, message_text=None):
         GMailAuth.__init__(self)
-        self.new_gmail_message = None
         self.max_message_size = Config.get_max_message_size()
-        self.message_to = Config.get_email(message_to)
+        self.message_to = message_to
         self.message_from = Config.get_email(message_from)
         self.message_subject = message_subject
         self.message_text = message_text
+        self.new_gmail_message = None
         self.gmail_message = None
 
     def get_top_inbox_message(self):
@@ -123,7 +126,7 @@ class GMailAPI(GMailAuth):
         print("No GMail Message to Send")
 
     def _create_gmail_message(self):
-        if self.message_to:
+        if self.message_to and isinstance(self.message_to, list):
             message = EmailMessage()
             message['To'] = ", ".join(self.message_to)
             message['From'] = self.message_from
@@ -148,7 +151,9 @@ class GMailAPI(GMailAuth):
         message_subject = None
         for header in message_payload['headers']:
             if header['name'] == 'From':
-                message_from = re.search(r'(?<=<).*?(?=>)', header['value']).group()
+                message_from = re.search(r'(?<=<).*?(?=>)', header['value'])
+                if message_from:
+                    message_from = message_from.group()
             if header['name'] == 'Subject':
                 message_subject = header['value']
         return message_from, message_subject

@@ -335,6 +335,31 @@ class TestGMailApi:
         assert 'Content-Type: text/plain; charset="utf-8"\nContent-Transfer-Encoding: 7bit\nMIME-Version: ' \
                '1.0\n\ntest_text\n' in sent_message
 
+    def test_send_gmail_message_no_message(self, mocker, tmp_path,
+                                           mock_gmail_api_get_message_size,
+                                           mock_google_api_get_whitelist,
+                                           mock_gmail_api_google_api_refresh_access_token_local,
+                                           mock_gmail_api_google_api_execute_request):
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_EMAIL": "test_sender@gmail.com"})
+        test_gmail_api = GMailAPI(message_to=None,
+                                  message_from=None,
+                                  message_subject=None,
+                                  message_text=None)
+        test_gmail_api.send_gmail_message()
+        assert not mock_gmail_api_google_api_refresh_access_token_local.called
+        assert not mock_gmail_api_google_api_execute_request.called
+        assert not test_gmail_api.gmail_message
+
     def test__dissect_message__no_parts(self, mock_gmail_api_get_message_size,
                                         mock_google_api_get_whitelist):
         mock_gmail_api_get_message_size.return_value = '250'
@@ -363,3 +388,68 @@ class TestGMailApi:
         assert message_text == "Yep, I've observed some pretty large emails going back and forth. I " \
                                "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
                                "\r\nbut so far the new integration has not failed to deliver anything\r\n"
+
+    def test__dissect_message_(self, mock_gmail_api_get_message_size,
+                                         mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        sut = GMailAPI()
+        message_from, message_subject, message_text = sut._dissect_message(two_part_email.email['payload'])
+        assert message_from == "test_sender@gmail.com"
+        assert message_subject == "full emails"
+        assert message_text == "Yep, I've observed some pretty large emails going back and forth. I " \
+                               "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
+                               "\r\nbut so far the new integration has not failed to deliver anything\r\n"
+
+    def test_dissect_message_headers_valid_message(self):
+        sut = GMailAPI()
+        message_from, message_subject = sut._dissect_message_headers(two_part_email.email['payload'])
+        assert message_from == "test_sender@gmail.com"
+        assert message_subject == "full emails"
+
+    def test_dissect_message_headers_valid_from(self):
+        test_headers = {'headers': [{'name': 'From',
+                                     'value': 'Test Person \u003ctest_sender@gmail.com\u003e'}]}
+        sut = GMailAPI()
+        message_from, message_subject = sut._dissect_message_headers(test_headers)
+        assert message_from == 'test_sender@gmail.com'
+        assert not message_subject
+
+    def test_dissect_message_headers_invalid_from(self):
+        test_headers = {'headers': [{'name': 'From',
+                                     'value': 'invalid_address'}]}
+        sut = GMailAPI()
+        message_from, message_subject = sut._dissect_message_headers(test_headers)
+        assert not message_from
+        assert not message_subject
+
+    def test_dissect_message_headers_valid_subject(self):
+        test_headers = {'headers': [{'name': 'Subject',
+                                     'value': 'testing...'}]}
+        sut = GMailAPI()
+        message_from, message_subject = sut._dissect_message_headers(test_headers)
+        assert not message_from
+        assert message_subject == 'testing...'
+
+    def test_dissect_message_headers_no_from_value(self):
+        test_headers = {'headers': [{'name': 'From',
+                                     'value': ''}]}
+        sut = GMailAPI()
+        message_from, message_subject = sut._dissect_message_headers(test_headers)
+        assert not message_from
+        assert not message_subject
+
+    def test_dissect_message_headers_no_subject_value(self):
+        test_headers = {'headers': [{'name': 'Subject',
+                                     'value': ''}]}
+        sut = GMailAPI()
+        message_from, message_subject = sut._dissect_message_headers(test_headers)
+        assert not message_from
+        assert not message_subject
+
+    def test_dissect_message_headers_no_headers(self):
+        test_headers = {'headers': []}
+        sut = GMailAPI()
+        message_from, message_subject = sut._dissect_message_headers(test_headers)
+        assert not message_from
+        assert not message_subject
