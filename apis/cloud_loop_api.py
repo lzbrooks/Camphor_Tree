@@ -26,9 +26,23 @@ class HexEncodeForCloudLoop:
         self.hardware_id = None
         self.message_to_encode = None
         self.payload_list = None
-        self.set_up_message_to_hex_encode(message_from, message_subject, message_to_encode)
+        self._set_up_message_to_hex_encode(message_from, message_subject, message_to_encode)
 
-    def set_up_message_to_hex_encode(self, message_from, message_subject, message_to_encode):
+    def send_cloud_loop_message(self):
+        if self.message_to_encode:
+            for payload_part_number, payload in enumerate(self.payload_list):
+                print("Sending CloudLoop Message")
+                print("Sending part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
+                url = self._get_cloud_loop_payload_url(payload)
+                headers = {"Accept": "application/json"}
+                response = self._send_cloudloop_message_request(headers, url)
+                print(response)
+                print(payload)
+                print("Sent part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
+        else:
+            print("No CloudLoop Message to Send")
+
+    def _set_up_message_to_hex_encode(self, message_from, message_subject, message_to_encode):
         if message_to_encode:
             print("Message Encoding...")
             self.auth_token = Config.get_cloud_loop_auth_token()
@@ -39,10 +53,10 @@ class HexEncodeForCloudLoop:
             else:
                 self.message_from = [message_from]
             self.message_subject = message_subject
-            self.payload_list = self.get_payload()
+            self.payload_list = self._get_payload()
             print("Message Encoded")
 
-    def get_payload(self):
+    def _get_payload(self):
         length_of_message_from = len(self.message_from[0]) * len(self.message_from)
         max_chunk_size = int(Config.get_max_message_size()) - length_of_message_from - len(self.message_subject)
         total_message_length = len(self.message_to_encode)
@@ -52,7 +66,7 @@ class HexEncodeForCloudLoop:
         else:
             self.message_to_encode = [self.message_to_encode]
         print("Number of Message Chunks: " + str(len(self.message_to_encode)))
-        self.message_from = self.email_to_contact_number(self.message_from)
+        self.message_from = self._email_to_contact_number(self.message_from)
         payload_list = []
         for part_number, message_text in enumerate(self.message_to_encode):
             payload = ""
@@ -66,38 +80,28 @@ class HexEncodeForCloudLoop:
         return payload_list
 
     @staticmethod
-    def email_to_contact_number(email_list):
+    def _email_to_contact_number(email_list):
         contacts = Config.get_whitelist()
-        email_list = [HexEncodeForCloudLoop.get_contact_number_for_email(email) if email in contacts.values()
+        email_list = [HexEncodeForCloudLoop._get_contact_number_for_email(email) if email in contacts.values()
                       else email for email in email_list]
         return email_list
 
     @staticmethod
-    def get_contact_number_for_email(email):
+    def _get_contact_number_for_email(email):
         contacts = Config.get_whitelist()
         for contact_number, email_address in contacts.items():
             if email_address == email:
                 return contact_number
 
-    def send_cloud_loop_message(self):
-        if self.message_to_encode:
-            for payload_part_number, payload in enumerate(self.payload_list):
-                print("Sending CloudLoop Message")
-                print("Sending part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
-                url = self.get_cloud_loop_payload_url(payload)
-                headers = {"Accept": "application/json"}
-                response = requests.get(url, headers=headers)
-                print(response)
-                print(payload)
-                print("Sent part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
-        else:
-            print("No CloudLoop Message to Send")
-
-    def get_cloud_loop_payload_url(self, payload):
+    def _get_cloud_loop_payload_url(self, payload):
         send_message_api = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware="
         url = send_message_api + self.hardware_id + \
               "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
         return url
+
+    @staticmethod
+    def _send_cloudloop_message_request(headers, url):
+        return requests.get(url, headers=headers)  # pragma: no cover
 
 
 class DecodeCloudLoopMessage:
@@ -108,25 +112,25 @@ class DecodeCloudLoopMessage:
         self.hex_message = None
         self.decoded_message = None
         self.recipient_list = []
-        self.set_up_hex_encoded_message(hex_message)
+        self._set_up_hex_encoded_message(hex_message)
 
-    def set_up_hex_encoded_message(self, hex_message):
+    def _set_up_hex_encoded_message(self, hex_message):
         if hex_message:
             print("Hex Message Processing...")
             self.hex_message = hex_message
             self.decoded_message = None
-            self.decode_hex_message()
-            self.split_recipient()
+            self._decode_hex_message()
+            self._split_recipient()
             print("Hex Message Processed")
 
-    def decode_hex_message(self):
+    def _decode_hex_message(self):
         # From JSON payload hex string to bytes
         if not isinstance(self.hex_message, bytes):
             print("Changing Hex to Bytes")
             self.hex_message = bytes.fromhex(self.hex_message)
         self.decoded_message = self.hex_message.decode()
 
-    def split_recipient(self):
+    def _split_recipient(self):
         message_parts = self.decoded_message.split(",")
         info_subjects = [subject for subject in message_parts if re.search(r'Info \(./.\)', subject)]
         urgent_subjects = [subject for subject in message_parts if re.search(r'Urgent \(./.\)', subject)]
@@ -146,8 +150,8 @@ class DecodeCloudLoopMessage:
             message_subject = ""
             recipient_list = message_parts
             message_text_list = message_parts
-        recipient_list_filtered = self.get_recipient_list(recipient_list)
-        recipient_list_mapped = self.contact_number_to_email(recipient_list_filtered)
+        recipient_list_filtered = self._get_recipient_list(recipient_list)
+        recipient_list_mapped = self._contact_number_to_email(recipient_list_filtered)
         if len(recipient_list_mapped) < len(recipient_list):
             message_text_list = message_parts
         message_text = "".join(message_text_list)
@@ -159,19 +163,19 @@ class DecodeCloudLoopMessage:
         print(self.message)
 
     @staticmethod
-    def get_recipient_list(message_parts):
+    def _get_recipient_list(message_parts):
         message_list = [message_part for message_part in message_parts
                         if message_part.isnumeric() or re.search(r'\S+@\S+', message_part)]
         return message_list
 
     @staticmethod
-    def contact_number_to_email(email_list):
-        email_list = [DecodeCloudLoopMessage.get_email_for_contact_number(email) if email.isnumeric()
+    def _contact_number_to_email(email_list):
+        email_list = [DecodeCloudLoopMessage._get_email_for_contact_number(email) if email.isnumeric()
                       else email for email in email_list]
         return email_list
 
     @staticmethod
-    def get_email_for_contact_number(contact):
+    def _get_email_for_contact_number(contact):
         contacts = Config.get_whitelist()
         for contact_number, email_address in contacts.items():
             if contact_number == contact:
