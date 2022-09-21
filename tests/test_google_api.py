@@ -389,14 +389,155 @@ class TestGMailApi:
                                "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
                                "\r\nbut so far the new integration has not failed to deliver anything\r\n"
 
-    def test__dissect_message_(self, mock_gmail_api_get_message_size,
-                                         mock_google_api_get_whitelist):
+    def test__dissect_message_parts_valid_payload(self, mock_gmail_api_get_message_size,
+                                                  mock_google_api_get_whitelist):
         mock_gmail_api_get_message_size.return_value = '250'
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         sut = GMailAPI()
-        message_from, message_subject, message_text = sut._dissect_message(two_part_email.email['payload'])
-        assert message_from == "test_sender@gmail.com"
-        assert message_subject == "full emails"
+        message_text = sut._dissect_message_parts("test_sender@gmail.com", two_part_email.email['payload'])
+        assert message_text == "Yep, I've observed some pretty large emails going back and forth. I " \
+                               "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
+                               "\r\nbut so far the new integration has not failed to deliver anything\r\n"
+
+    def test__dissect_message_parts_stripped_valid_message(self, mock_gmail_api_get_message_size,
+                                                           mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_part = {"mimeType": "text/plain",
+                             "body": {"size": 216,
+                                      "data": "WWVwLCBJJ3ZlIG9ic2VydmVkIHNvbWUgcHJldHR5IGxhcmdlIGVtYWlscyBnb2luZy"
+                                              "BiYWNrIGFuZCBmb3J0aC4gSSBkbw0KZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91Z"
+                                              "Gxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJ2xsIGZvcndhcmQgaXQsDQpi"
+                                              "dXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGV"
+                                              "saXZlciBhbnl0aGluZw0K"
+                                      }}
+        test_message_payload = {'parts': [test_message_part]}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_sender@gmail.com", test_message_payload)
+        assert message_text == "Yep, I've observed some pretty large emails going back and forth. I " \
+                               "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
+                               "\r\nbut so far the new integration has not failed to deliver anything\r\n"
+
+    def test__dissect_message_parts_no_parts(self, mock_gmail_api_get_message_size,
+                                                           mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_payload = {'parts': []}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_sender@gmail.com", test_message_payload)
+        assert not message_text
+
+    def test__dissect_message_parts_invalid_mime_type(self, mock_gmail_api_get_message_size,
+                                                      mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_part = {"mimeType": "text/html",
+                             "body": {"size": 216,
+                                      "data": "WWVwLCBJJ3ZlIG9ic2VydmVkIHNvbWUgcHJldHR5IGxhcmdlIGVtYWlscyBnb2luZy"
+                                              "BiYWNrIGFuZCBmb3J0aC4gSSBkbw0KZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91Z"
+                                              "Gxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJ2xsIGZvcndhcmQgaXQsDQpi"
+                                              "dXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGV"
+                                              "saXZlciBhbnl0aGluZw0K"
+                                      }}
+        test_message_payload = {'parts': [test_message_part]}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_sender@gmail.com", test_message_payload)
+        assert not message_text
+
+    def test__dissect_message_parts_no_mime_type(self, mock_gmail_api_get_message_size,
+                                                 mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_part = {"body": {"size": 216,
+                                      "data": "WWVwLCBJJ3ZlIG9ic2VydmVkIHNvbWUgcHJldHR5IGxhcmdlIGVtYWlscyBnb2luZy"
+                                              "BiYWNrIGFuZCBmb3J0aC4gSSBkbw0KZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91Z"
+                                              "Gxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJ2xsIGZvcndhcmQgaXQsDQpi"
+                                              "dXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGV"
+                                              "saXZlciBhbnl0aGluZw0K"
+                                      }}
+        test_message_payload = {'parts': [test_message_part]}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_sender@gmail.com", test_message_payload)
+        assert not message_text
+
+    def test__dissect_message_parts_no_size(self, mock_gmail_api_get_message_size,
+                                            mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_part = {"mimeType": "text/plain",
+                             "body": {"data": "WWVwLCBJJ3ZlIG9ic2VydmVkIHNvbWUgcHJldHR5IGxhcmdlIGVtYWlscyBnb2luZy"
+                                              "BiYWNrIGFuZCBmb3J0aC4gSSBkbw0KZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91Z"
+                                              "Gxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJ2xsIGZvcndhcmQgaXQsDQpi"
+                                              "dXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGV"
+                                              "saXZlciBhbnl0aGluZw0K"
+                                      }}
+        test_message_payload = {'parts': [test_message_part]}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_sender@gmail.com", test_message_payload)
+        assert not message_text
+
+    def test__dissect_message_parts_no_data(self, mock_gmail_api_get_message_size,
+                                            mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_part = {"mimeType": "text/plain",
+                             "body": {"size": 0}}
+        test_message_payload = {'parts': [test_message_part]}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_sender@gmail.com", test_message_payload)
+        assert not message_text
+
+    def test__dissect_message_parts_small_size_not_whitelisted(self, mock_gmail_api_get_message_size,
+                                                               mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_part = {"mimeType": "text/plain",
+                             "body": {"size": 216,
+                                      "data": "WWVwLCBJJ3ZlIG9ic2VydmVkIHNvbWUgcHJldHR5IGxhcmdlIGVtYWlscyBnb2luZy"
+                                              "BiYWNrIGFuZCBmb3J0aC4gSSBkbw0KZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91Z"
+                                              "Gxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJ2xsIGZvcndhcmQgaXQsDQpi"
+                                              "dXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGV"
+                                              "saXZlciBhbnl0aGluZw0K"
+                                      }}
+        test_message_payload = {'parts': [test_message_part]}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_not_whitelisted@gmail.com", test_message_payload)
+        assert message_text == "Yep, I've observed some pretty large emails going back and forth. I " \
+                               "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
+                               "\r\nbut so far the new integration has not failed to deliver anything\r\n"
+
+    def test__dissect_message_parts_large_size_not_whitelisted(self, mock_gmail_api_get_message_size,
+                                                               mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_part = {"mimeType": "text/plain",
+                             "body": {"size": 300,
+                                      "data": "WWVwLCBJJ3ZlIG9ic2VydmVkIHNvbWUgcHJldHR5IGxhcmdlIGVtYWlscyBnb2luZy"
+                                              "BiYWNrIGFuZCBmb3J0aC4gSSBkbw0KZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91Z"
+                                              "Gxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJ2xsIGZvcndhcmQgaXQsDQpi"
+                                              "dXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGV"
+                                              "saXZlciBhbnl0aGluZw0K"
+                                      }}
+        test_message_payload = {'parts': [test_message_part]}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_not_whitelisted@gmail.com", test_message_payload)
+        assert not message_text
+
+    def test__dissect_message_parts_large_size_whitelisted(self, mock_gmail_api_get_message_size,
+                                                           mock_google_api_get_whitelist):
+        mock_gmail_api_get_message_size.return_value = '250'
+        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_message_part = {"mimeType": "text/plain",
+                             "body": {"size": 300,
+                                      "data": "WWVwLCBJJ3ZlIG9ic2VydmVkIHNvbWUgcHJldHR5IGxhcmdlIGVtYWlscyBnb2luZy"
+                                              "BiYWNrIGFuZCBmb3J0aC4gSSBkbw0KZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91Z"
+                                              "Gxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJ2xsIGZvcndhcmQgaXQsDQpi"
+                                              "dXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGV"
+                                              "saXZlciBhbnl0aGluZw0K"
+                                      }}
+        test_message_payload = {'parts': [test_message_part]}
+        sut = GMailAPI()
+        message_text = sut._dissect_message_parts("test_sender@gmail.com", test_message_payload)
         assert message_text == "Yep, I've observed some pretty large emails going back and forth. I " \
                                "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
                                "\r\nbut so far the new integration has not failed to deliver anything\r\n"
