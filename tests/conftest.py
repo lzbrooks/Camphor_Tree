@@ -88,12 +88,12 @@ def mock_write_gmail_message_to_file(mocker):
 
 @pytest.fixture
 def mock_cloud_loop_message_set_up_hex_encoded_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.DecodeCloudLoopMessage.set_up_hex_encoded_message")
+    return mocker.patch("apis.camphor_tree_api.DecodeCloudLoopMessage._set_up_hex_encoded_message")
 
 
 @pytest.fixture
 def mock_cloud_loop_message_set_up_message_to_hex_encode(mocker):
-    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.set_up_message_to_hex_encode")
+    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop._set_up_message_to_hex_encode")
 
 
 @pytest.fixture
@@ -123,7 +123,7 @@ def mock_cloud_loop_api_get_rock_block_id(mocker):
 
 @pytest.fixture
 def mock_cloud_loop_api_get_cloud_loop_payload_url(mocker):
-    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop.get_cloud_loop_payload_url")
+    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop._get_cloud_loop_payload_url")
 
 
 @pytest.fixture

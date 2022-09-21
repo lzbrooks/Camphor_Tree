@@ -35,7 +35,7 @@ class HexEncodeForCloudLoop:
                 print("Sending part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
                 url = self._get_cloud_loop_payload_url(payload)
                 headers = {"Accept": "application/json"}
-                response = self._send_cloudloop_message_request(headers, url)
+                response = requests.get(url, headers=headers)
                 print(response)
                 print(payload)
                 print("Sent part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
@@ -98,10 +98,6 @@ class HexEncodeForCloudLoop:
         url = send_message_api + self.hardware_id + \
               "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
         return url
-
-    @staticmethod
-    def _send_cloudloop_message_request(headers, url):
-        return requests.get(url, headers=headers)  # pragma: no cover
 
 
 class DecodeCloudLoopMessage:
