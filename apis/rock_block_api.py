@@ -16,9 +16,9 @@ from apis.cloud_loop_api import DecodeCloudLoopMessage
 class RockBlockAPI:
     def __init__(self):
         self.rock_block = None
-        self.set_up_uart()
+        self._set_up_uart()
 
-    def set_up_uart(self):
+    def _set_up_uart(self):
         print("RockBLOCK Processing...")
         uart = serial.Serial("/dev/serial0", 19200)
         self.rock_block = RockBlock(uart)
@@ -26,26 +26,26 @@ class RockBlockAPI:
 
     def talk_to_rock_block(self):
         print("Talking to satellite...")
-        status = self.get_satellite_transfer()
+        status = self._get_satellite_transfer()
         while status[0] > 8:
             time.sleep(10)
-            self.get_satellite_transfer()
+            self._get_satellite_transfer()
             print(status)
         print("\nDONE.")
         return status
 
-    def get_satellite_transfer(self):
+    def _get_satellite_transfer(self):
         return self.rock_block.satellite_transfer()
 
     def get_data_in(self):
         return self.rock_block.data_in
 
-    def set_data_out(self, data):
+    def _set_data_out(self, data):
         self.rock_block.data_out = data
 
     def send_data_out(self, data):
         for message in data:
-            self.set_data_out(message.encode())
+            self._set_data_out(message.encode())
             self.talk_to_rock_block()
 
 
