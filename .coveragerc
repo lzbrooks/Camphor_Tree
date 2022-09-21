@@ -1,0 +1,10 @@
+[coverage:run]
+command_line = --module pytest
+branch = True
+omit = tests/**
+
+[coverage:report]
+fail_under = 100
+show_missing = True
+skip_covered = True
+

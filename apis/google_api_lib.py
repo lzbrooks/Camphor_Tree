@@ -71,15 +71,15 @@ class GMailAuth:
 
     @staticmethod
     def _google_api_refresh_with_browser(flow):
-        return flow.run_local_server(port=0)
+        return flow.run_local_server(port=0)  # pragma: no cover
 
     def _google_api_refresh_access_token(self):
-        self.creds.refresh(Request())
+        self.creds.refresh(Request())  # pragma: no cover
 
     @staticmethod
     def _google_api_execute_request(api_http_request):
         try:
-            return api_http_request.execute()
+            return api_http_request.execute()  # pragma: no cover
         except HttpError as e:
             print('Error response status code : {0}, reason : {1}'.format(e.status_code, e.error_details))
 
