@@ -1,10 +1,12 @@
 import json
 import os
+import types
 from base64 import urlsafe_b64decode
 
 import pytest
 
 from google.oauth2.credentials import Credentials
+from googleapiclient.errors import HttpError
 
 from apis.google_api_lib import GMailAPI, GMailAuth
 from tests.data import bob_skipped_email, two_part_email, dummy_client_credentials, \
@@ -123,6 +125,31 @@ class TestGMailAuth:
         test_gmail_auth = GMailAuth()
         test_gmail_auth._get_creds()
         assert not mock_gmail_auth_google_api_refresh_access_token_local.called
+
+    def test_google_api_execute_request_error(self, mocker, capfd):
+        test_api_http_request = "bogus_url"
+        test_http_request_resp = types.SimpleNamespace()
+        test_http_request_resp.status = "403"
+        test_http_request_resp.reason = "placeholder"
+        test_gmail_auth = GMailAuth()
+        mocker.patch('apis.google_api_lib.GMailAuth._google_api_execute_request_http_catch',
+                      side_effect=HttpError(resp=test_http_request_resp,
+                                            content=bytes("uh oh", "utf-8"),
+                                            uri="http://localhost"))
+        test_gmail_auth._google_api_execute_request(test_api_http_request)
+        captured = capfd.readouterr()
+        assert captured.out == "Error response status code : 403, reason : uh oh\n"
+
+    def test_google_api_execute_request_no_error(self, capfd,
+                                                 mock_gmail_auth_google_api_execute_request_http_catch):
+        mock_gmail_auth_google_api_execute_request_http_catch.return_value = "200 Success"
+        test_api_http_request = "bogus_url"
+        test_gmail_auth = GMailAuth()
+        test_response = test_gmail_auth._google_api_execute_request(test_api_http_request)
+        captured = capfd.readouterr()
+        assert not captured.out
+        assert mock_gmail_auth_google_api_execute_request_http_catch.called
+        assert test_response == "200 Success"
 
 
 class TestGMailApi:

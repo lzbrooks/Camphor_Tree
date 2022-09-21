@@ -283,6 +283,11 @@ def mock_gmail_auth_google_api_execute_request(mocker):
 
 
 @pytest.fixture
+def mock_gmail_auth_google_api_execute_request_http_catch(mocker):
+    return mocker.patch("apis.google_api_lib.GMailAuth._google_api_execute_request_http_catch")
+
+
+@pytest.fixture
 def mock_gmail_auth_google_api_re_watch(mocker):
     return mocker.patch("apis.google_api_lib.GMailAuth._google_api_re_watch")
 

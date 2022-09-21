@@ -76,12 +76,15 @@ class GMailAuth:
     def _google_api_refresh_access_token(self):
         self.creds.refresh(Request())  # pragma: no cover
 
-    @staticmethod
-    def _google_api_execute_request(api_http_request):
+    def _google_api_execute_request(self, api_http_request):
         try:
-            return api_http_request.execute()  # pragma: no cover
+            return self._google_api_execute_request_http_catch(api_http_request)
         except HttpError as e:
             print('Error response status code : {0}, reason : {1}'.format(e.status_code, e.error_details))
+
+    @staticmethod
+    def _google_api_execute_request_http_catch(api_http_request):
+        return api_http_request.execute()  # pragma: no cover
 
 
 class GMailAPI(GMailAuth):
@@ -194,6 +197,6 @@ class GMailAPI(GMailAuth):
             return self._google_api_execute_request(get_message_http_request)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     gmail_re_watch = GMailAuth()
     print(gmail_re_watch.re_watch())
