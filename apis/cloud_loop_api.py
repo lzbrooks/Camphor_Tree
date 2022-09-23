@@ -31,19 +31,32 @@ class HexEncodeForCloudLoop:
         if self.message_to_encode:
             payload_list = self.get_payload()
             for payload_part_number, payload in enumerate(payload_list):
-                print("Sending CloudLoop Message")
-                print("Sending part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
-                url = self._get_cloud_loop_payload_url(payload)
-                headers = {"Accept": "application/json"}
-                response = requests.get(url, headers=headers)
-                print(response)
-                print(payload)
-                print("Sent part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
+                self._send_payload_part(payload, payload_list, payload_part_number)
         else:
             print("No CloudLoop Message to Send")
 
     def get_payload(self):
         print("Message Encoding...")
+        self._chunk_message()
+        self.message_from = self._email_to_contact_number(self.message_from)
+        payload_list = []
+        for part_number, message_text in enumerate(self.message_to_encode):
+            payload = self._assemble_payload_part(message_text, part_number)
+            payload_list.append(payload)
+        print("Message Encoded")
+        return payload_list
+
+    def _send_payload_part(self, payload, payload_list, payload_part_number):
+        print("Sending CloudLoop Message")
+        print("Sending part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
+        url = self._get_cloud_loop_payload_url(payload)
+        headers = {"Accept": "application/json"}
+        response = requests.get(url, headers=headers)
+        print(response)
+        print(payload)
+        print("Sent part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
+
+    def _chunk_message(self):
         length_of_message_from = len(self.message_from[0]) * len(self.message_from)
         max_chunk_size = int(Config.get_max_message_size()) - length_of_message_from - len(self.message_subject)
         total_message_length = len(self.message_to_encode)
@@ -53,19 +66,16 @@ class HexEncodeForCloudLoop:
         else:
             self.message_to_encode = [self.message_to_encode]
         print("Number of Message Chunks: " + str(len(self.message_to_encode)))
-        self.message_from = self._email_to_contact_number(self.message_from)
-        payload_list = []
-        for part_number, message_text in enumerate(self.message_to_encode):
-            payload = ""
-            for sender in self.message_from:
-                payload += sender + ","
-            payload += self.message_subject
-            payload += " (" + str(part_number + 1) + "/" + str(len(self.message_to_encode)) + ")" + ","
-            payload += message_text
-            payload = payload.replace('\r', '').replace('\n', '')
-            payload_list.append(payload)
-        print("Message Encoded")
-        return payload_list
+
+    def _assemble_payload_part(self, message_text, part_number):
+        payload = ""
+        for sender in self.message_from:
+            payload += sender + ","
+        payload += self.message_subject
+        payload += " (" + str(part_number + 1) + "/" + str(len(self.message_to_encode)) + ")" + ","
+        payload += message_text
+        payload = payload.replace('\r', '').replace('\n', '')
+        return payload
 
     @staticmethod
     def _email_to_contact_number(email_list):
