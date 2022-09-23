@@ -87,11 +87,6 @@ def mock_write_gmail_message_to_file(mocker):
 
 
 @pytest.fixture
-def mock_cloud_loop_message_set_up_hex_encoded_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.DecodeCloudLoopMessage._set_up_hex_encoded_message")
-
-
-@pytest.fixture
 def mock_cloud_loop_message_get_max_message_size(mocker):
     return mocker.patch("apis.cloud_loop_api.Config.get_max_message_size")
 

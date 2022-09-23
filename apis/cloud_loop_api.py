@@ -102,20 +102,15 @@ class DecodeCloudLoopMessage:
     def __init__(self, hex_message=None):
         self.message_subject = None
         self.message = None
-
-        self.hex_message = None
+        self.hex_message = hex_message
         self.decoded_message = None
         self.recipient_list = []
-        self._set_up_hex_encoded_message(hex_message)
 
-    def _set_up_hex_encoded_message(self, hex_message):
-        if hex_message:
-            print("Hex Message Processing...")
-            self.hex_message = hex_message
-            self.decoded_message = None
-            self._decode_hex_message()
-            self._split_recipient()
-            print("Hex Message Processed")
+    def decode_hex_message(self):
+        print("Hex Message Processing...")
+        self._decode_hex_message()
+        self._split_recipient()
+        print("Hex Message Processed")
 
     def _decode_hex_message(self):
         # From JSON payload hex string to bytes

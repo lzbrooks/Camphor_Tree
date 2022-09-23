@@ -59,12 +59,22 @@ class TestCamphorTreeApi:
         assert mock_cloud_loop_api_get_rock_block_id.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
 
-    def test_relay_cloud_loop_message_to_email(self, mock_gmail_api_get_email,
+    def test_relay_cloud_loop_message_to_email(self, capfd, mock_gmail_api_get_email,
                                                mock_gmail_api_send_gmail_message,
-                                               mock_cloud_loop_message_set_up_hex_encoded_message,
                                                mock_cloud_loop_message_send_cloud_loop_message):
-        relay_cloud_loop_message_to_email("test_request_json_data")
+        mock_gmail_api_get_email.return_value = "test_sender@gmail.com"
+        test_hex_json = "test_sender@gmail.com,Info (1/1),test request json data".encode().hex()
+        relay_cloud_loop_message_to_email(test_hex_json)
+        captured = capfd.readouterr()
         assert mock_gmail_api_send_gmail_message.called
+        assert captured.out == ('POST CloudLoop Ping Received\n'
+                                'Hex Message Processing...\n'
+                                'Changing Hex to Bytes\n'
+                                "['test_sender@gmail.com']\n"
+                                'Info (1/1)\n'
+                                'test request json data\n'
+                                'Hex Message Processed\n'
+                                'POST GMail Message Handled\n')
 
     def test_get_latest_gmail_message_text(self, mock_gmail_api_get_message_size,
                                            mock_gmail_get_top_inbox_message,

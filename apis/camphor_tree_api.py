@@ -26,6 +26,7 @@ def send_satellite_message(email, info_level, message_body, server_option):
 def relay_cloud_loop_message_to_email(request_json_data):
     print("POST CloudLoop Ping Received")
     message_from_cloud_loop = DecodeCloudLoopMessage(hex_message=request_json_data)
+    message_from_cloud_loop.decode_hex_message()
     gmail_message = GMailAPI(message_to=message_from_cloud_loop.recipient_list,
                                      message_subject=message_from_cloud_loop.message_subject,
                                      message_text=message_from_cloud_loop.message)
