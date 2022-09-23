@@ -28,8 +28,8 @@ def relay_cloud_loop_message_to_email(request_json_data):
     message_from_cloud_loop = DecodeCloudLoopMessage(hex_message=request_json_data)
     message_from_cloud_loop.decode_hex_message()
     gmail_message = GMailAPI(message_to=message_from_cloud_loop.recipient_list,
-                                     message_subject=message_from_cloud_loop.message_subject,
-                                     message_text=message_from_cloud_loop.message)
+                             message_subject=message_from_cloud_loop.message_subject,
+                             message_text=message_from_cloud_loop.message_text)
     gmail_message.send_gmail_message()
     print("POST GMail Message Handled")
 

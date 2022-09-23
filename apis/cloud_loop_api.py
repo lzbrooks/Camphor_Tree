@@ -100,16 +100,18 @@ class HexEncodeForCloudLoop:
 
 class DecodeCloudLoopMessage:
     def __init__(self, hex_message=None):
-        self.message_subject = None
-        self.message = None
         self.hex_message = hex_message
         self.decoded_message = None
+        self._message_parts = None
+        self._message_text_list = []
         self.recipient_list = []
+        self.message_subject = None
+        self.message_text = None
 
     def decode_hex_message(self):
         print("Hex Message Processing...")
         self._decode_hex_message()
-        self._split_recipient()
+        self._extract_all_message_parts()
         print("Hex Message Processed")
 
     def _decode_hex_message(self):
@@ -119,11 +121,19 @@ class DecodeCloudLoopMessage:
             self.hex_message = bytes.fromhex(self.hex_message)
         self.decoded_message = self.hex_message.decode()
 
-    def _split_recipient(self):
-        message_parts = self.decoded_message.split(",")
-        info_subjects = [subject for subject in message_parts if re.search(r'Info \(./.\)', subject)]
-        urgent_subjects = [subject for subject in message_parts if re.search(r'Urgent \(./.\)', subject)]
-        emergency_subjects = [subject for subject in message_parts if re.search(r'Emergency \(./.\)', subject)]
+    def _extract_all_message_parts(self):
+        self._message_parts = self.decoded_message.split(",")
+        self._extract_message_subject()
+        self._split_on_subject()
+        self._extract_message_recipient_and_text()
+        print(self.recipient_list)
+        print(self.message_subject)
+        print(self.message_text)
+
+    def _extract_message_subject(self):
+        info_subjects = [subject for subject in self._message_parts if re.search(r'Info \(./.\)', subject)]
+        urgent_subjects = [subject for subject in self._message_parts if re.search(r'Urgent \(./.\)', subject)]
+        emergency_subjects = [subject for subject in self._message_parts if re.search(r'Emergency \(./.\)', subject)]
         if info_subjects:
             message_subject = info_subjects[0]
         elif urgent_subjects:
@@ -132,24 +142,24 @@ class DecodeCloudLoopMessage:
             message_subject = emergency_subjects[0]
         else:
             message_subject = None
-        if message_subject:
-            recipient_list = message_parts[:message_parts.index(message_subject)]
-            message_text_list = message_parts[message_parts.index(message_subject) + 1:]
-        else:
-            message_subject = ""
-            recipient_list = message_parts
-            message_text_list = message_parts
-        recipient_list_filtered = self._get_recipient_list(recipient_list)
-        recipient_list_mapped = self._contact_number_to_email(recipient_list_filtered)
-        if len(recipient_list_mapped) < len(recipient_list):
-            message_text_list = message_parts
-        message_text = "".join(message_text_list)
-        self.recipient_list = recipient_list_mapped
         self.message_subject = message_subject
-        self.message = message_text
-        print(self.recipient_list)
-        print(self.message_subject)
-        print(self.message)
+
+    def _split_on_subject(self):
+        if self.message_subject:
+            self.recipient_list = self._message_parts[:self._message_parts.index(self.message_subject)]
+            self._message_text_list = self._message_parts[self._message_parts.index(self.message_subject) + 1:]
+        else:
+            self.message_subject = ""
+            self.recipient_list = self._message_parts
+            self._message_text_list = self._message_parts
+
+    def _extract_message_recipient_and_text(self):
+        recipient_list_filtered = self._get_recipient_list(self.recipient_list)
+        recipient_list_mapped = self._contact_number_to_email(recipient_list_filtered)
+        if len(recipient_list_mapped) < len(self.recipient_list):
+            self._message_text_list = self._message_parts
+        self.recipient_list = recipient_list_mapped
+        self.message_text = "".join(self._message_text_list)
 
     @staticmethod
     def _get_recipient_list(message_parts):
@@ -157,9 +167,8 @@ class DecodeCloudLoopMessage:
                         if message_part.isnumeric() or re.search(r'\S+@\S+', message_part)]
         return message_list
 
-    @staticmethod
-    def _contact_number_to_email(email_list):
-        email_list = [DecodeCloudLoopMessage._get_email_for_contact_number(email) if email.isnumeric()
+    def _contact_number_to_email(self, email_list):
+        email_list = [self._get_email_for_contact_number(email) if email.isnumeric()
                       else email for email in email_list]
         return email_list
 

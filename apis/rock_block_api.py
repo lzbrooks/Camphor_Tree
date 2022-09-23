@@ -65,7 +65,7 @@ def save_rock_block_hex_data_to_file(hex_data):
         message_from_rock_block = DecodeCloudLoopMessage(hex_message=hex_data)
         message_from_rock_block.decode_hex_message()
         message_to_write = message_from_rock_block.recipient_list + \
-                           [message_from_rock_block.message_subject, message_from_rock_block.message]
+                           [message_from_rock_block.message_subject, message_from_rock_block.message_text]
         message_file_name = "Inbox/" + datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".txt"
         with open(message_file_name, "w") as file:
             file.writelines("%s\n" % line for line in message_to_write)
