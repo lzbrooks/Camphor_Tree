@@ -92,11 +92,6 @@ def mock_cloud_loop_message_set_up_hex_encoded_message(mocker):
 
 
 @pytest.fixture
-def mock_cloud_loop_message_set_up_message_to_hex_encode(mocker):
-    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop._set_up_message_to_hex_encode")
-
-
-@pytest.fixture
 def mock_cloud_loop_message_get_max_message_size(mocker):
     return mocker.patch("apis.cloud_loop_api.Config.get_max_message_size")
 
@@ -109,6 +104,11 @@ def mock_cloud_loop_message_get_whitelist(mocker):
 @pytest.fixture
 def mock_cloud_loop_message_send_cloud_loop_message(mocker):
     return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.send_cloud_loop_message")
+
+
+@pytest.fixture
+def mock_cloud_loop_message_get_payload(mocker):
+    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.get_payload")
 
 
 @pytest.fixture

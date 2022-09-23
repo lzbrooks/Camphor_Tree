@@ -12,11 +12,14 @@ def send_satellite_message(email, info_level, message_body, server_option):
                                                message_to_encode=message_body)
     if server_option == 'Satsuki':
         rock_block_message.send_cloud_loop_message()
-    if server_option == 'Mei':
+        send_status = 'Send Success'
+    elif server_option == 'Mei':
         rock_block_api = RockBlockAPI()
-        rock_block_api.send_data_out(rock_block_message.payload_list)
-    # TODO: add check for incorrect server option
-    send_status = 'Send Success'
+        rock_block_api.send_data_out(rock_block_message.get_payload())
+        send_status = 'Send Success'
+    else:
+        # TODO: test for incorrect server option
+        send_status = 'Incorrect Server Mode'
     return send_status
 
 

@@ -18,45 +18,32 @@ from config.config import Config
 
 class HexEncodeForCloudLoop:
     def __init__(self, message_from=None, message_subject=None, message_to_encode=None):
-        self.message_subject = None
-        self.message = None
-
-        self.message_from = None
-        self.auth_token = None
-        self.hardware_id = None
-        self.message_to_encode = None
-        self.payload_list = None
-        self._set_up_message_to_hex_encode(message_from, message_subject, message_to_encode)
+        self.auth_token = Config.get_cloud_loop_auth_token()
+        self.hardware_id = Config.get_rock_block_id()
+        if isinstance(message_from, list) or not message_from:
+            self.message_from = message_from
+        else:
+            self.message_from = [message_from]
+        self.message_to_encode = message_to_encode
+        self.message_subject = message_subject
 
     def send_cloud_loop_message(self):
         if self.message_to_encode:
-            for payload_part_number, payload in enumerate(self.payload_list):
+            payload_list = self.get_payload()
+            for payload_part_number, payload in enumerate(payload_list):
                 print("Sending CloudLoop Message")
-                print("Sending part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
+                print("Sending part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
                 url = self._get_cloud_loop_payload_url(payload)
                 headers = {"Accept": "application/json"}
                 response = requests.get(url, headers=headers)
                 print(response)
                 print(payload)
-                print("Sent part " + str(payload_part_number + 1) + " of " + str(len(self.payload_list)))
+                print("Sent part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
         else:
             print("No CloudLoop Message to Send")
 
-    def _set_up_message_to_hex_encode(self, message_from, message_subject, message_to_encode):
-        if message_to_encode:
-            print("Message Encoding...")
-            self.auth_token = Config.get_cloud_loop_auth_token()
-            self.hardware_id = Config.get_rock_block_id()
-            self.message_to_encode = message_to_encode
-            if isinstance(message_from, list):
-                self.message_from = message_from
-            else:
-                self.message_from = [message_from]
-            self.message_subject = message_subject
-            self.payload_list = self._get_payload()
-            print("Message Encoded")
-
-    def _get_payload(self):
+    def get_payload(self):
+        print("Message Encoding...")
         length_of_message_from = len(self.message_from[0]) * len(self.message_from)
         max_chunk_size = int(Config.get_max_message_size()) - length_of_message_from - len(self.message_subject)
         total_message_length = len(self.message_to_encode)
@@ -77,6 +64,7 @@ class HexEncodeForCloudLoop:
             payload += message_text
             payload = payload.replace('\r', '').replace('\n', '')
             payload_list.append(payload)
+        print("Message Encoded")
         return payload_list
 
     @staticmethod

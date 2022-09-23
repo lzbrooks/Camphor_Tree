@@ -8,20 +8,24 @@ from apis.camphor_tree_api import send_satellite_message, relay_email_message_to
 
 
 class TestCamphorTreeApi:
-    def test_send_satellite_message_satsuki(self, mock_cloud_loop_message_set_up_hex_encoded_message,
-                                            mock_cloud_loop_message_set_up_message_to_hex_encode,
+    def test_send_satellite_message_satsuki(self, mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                            mock_cloud_loop_api_get_rock_block_id,
                                             mock_cloud_loop_message_send_cloud_loop_message):
         test_server_option = "Satsuki"
         send_status = send_satellite_message("test_email", "test_info_level", "test_message_body", test_server_option)
-        assert mock_cloud_loop_message_set_up_message_to_hex_encode.called
+        assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert mock_cloud_loop_api_get_rock_block_id.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
         assert send_status == 'Send Success'
 
-    def test_send_satellite_message_mei(self, mock_cloud_loop_message_set_up_hex_encoded_message,
-                                        mock_cloud_loop_message_set_up_message_to_hex_encode,
-                                        mock_rock_block_api_set_up_uart, mock_rock_block_api_send_data_out):
+    def test_send_satellite_message_mei(self, mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                        mock_cloud_loop_api_get_rock_block_id,
+                                        mock_cloud_loop_message_get_payload,
+                                        mock_rock_block_api_set_up_uart,
+                                        mock_rock_block_api_send_data_out):
         test_server_option = "Mei"
         send_status = send_satellite_message("test_email", "test_info_level", "test_message_body", test_server_option)
+        assert mock_cloud_loop_message_get_payload.called
         assert mock_rock_block_api_set_up_uart.called
         assert mock_rock_block_api_send_data_out.called
         assert send_status == 'Send Success'
@@ -30,31 +34,34 @@ class TestCamphorTreeApi:
                                                           mock_gmail_api_google_api_get_top_inbox_message,
                                                           mock_gmail_api_google_api_get_message,
                                                           mock_gmail_api_get_creds,
-                                                          mock_cloud_loop_message_set_up_message_to_hex_encode,
+                                                          mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                          mock_cloud_loop_api_get_rock_block_id,
                                                           mock_cloud_loop_message_send_cloud_loop_message):
         with pytest.raises(TypeError, match=r"'NoneType' object is not subscriptable"):
             relay_email_message_to_cloud_loop()
         assert mock_gmail_api_get_message_size.called
-        assert not mock_cloud_loop_message_set_up_message_to_hex_encode.called
+        assert not mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert not mock_cloud_loop_api_get_rock_block_id.called
         assert not mock_cloud_loop_message_send_cloud_loop_message.called
 
     def test_relay_email_message_to_cloud_loop_one_message(self, mock_gmail_api_get_message_size,
                                                            mock_gmail_get_top_inbox_message,
                                                            mock_gmail_api_get_gmail_message_by_id,
-                                                           mock_cloud_loop_message_set_up_message_to_hex_encode,
+                                                           mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                           mock_cloud_loop_api_get_rock_block_id,
                                                            mock_cloud_loop_message_send_cloud_loop_message):
         mock_gmail_get_top_inbox_message.return_value = "test_message"
         mock_gmail_api_get_gmail_message_by_id.return_value = ("message_from", "message_subject", "message_text")
 
         relay_email_message_to_cloud_loop()
         assert mock_gmail_api_get_message_size.called
-        assert mock_cloud_loop_message_set_up_message_to_hex_encode.called
+        assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert mock_cloud_loop_api_get_rock_block_id.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
 
     def test_relay_cloud_loop_message_to_email(self, mock_gmail_api_get_email,
                                                mock_gmail_api_send_gmail_message,
                                                mock_cloud_loop_message_set_up_hex_encoded_message,
-                                               mock_cloud_loop_message_set_up_message_to_hex_encode,
                                                mock_cloud_loop_message_send_cloud_loop_message):
         relay_cloud_loop_message_to_email("test_request_json_data")
         assert mock_gmail_api_send_gmail_message.called

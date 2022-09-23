@@ -307,10 +307,9 @@ class TestAppConsoleFlowIntegration:
 
     def test_email_page_valid_email_mei_no_serial(self, client,
                                                   mock_get_sister,
-                                                  mock_cloud_loop_message_get_max_message_size,
-                                                  mock_cloud_loop_message_get_whitelist,
+                                                  mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                  mock_cloud_loop_api_get_rock_block_id,
                                                   mock_rock_block_api_get_satellite_transfer):
-        mock_cloud_loop_message_get_max_message_size.return_value = "250"
         mock_get_sister.return_value = 'Mei'
 
         with pytest.raises(SerialException, match=r"could not open port /dev/serial0"):
@@ -318,8 +317,9 @@ class TestAppConsoleFlowIntegration:
                                    "info_level": "Info",
                                    "message_body": "Testing",
                                    "submit-email": "Send Email"})
-        assert mock_cloud_loop_message_get_max_message_size.called
-        assert mock_cloud_loop_message_get_whitelist.called
+        assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert mock_cloud_loop_api_get_rock_block_id.called
+        assert not mock_rock_block_api_get_satellite_transfer.called
 
     def test_email_page_valid_email_mei(self, client,
                                         mock_get_sister,
