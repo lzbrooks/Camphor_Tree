@@ -110,11 +110,11 @@ class DecodeCloudLoopMessage:
 
     def decode_hex_message(self):
         print("Hex Message Processing...")
-        self._decode_hex_message()
+        self._decode_message_from_hex()
         self._extract_all_message_parts()
         print("Hex Message Processed")
 
-    def _decode_hex_message(self):
+    def _decode_message_from_hex(self):
         # From JSON payload hex string to bytes
         if not isinstance(self.hex_message, bytes):
             print("Changing Hex to Bytes")

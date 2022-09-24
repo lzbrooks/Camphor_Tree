@@ -102,6 +102,11 @@ def mock_cloud_loop_message_send_cloud_loop_message(mocker):
 
 
 @pytest.fixture
+def mock_cloud_loop_message_send_cloud_loop_message_local(mocker):
+    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop.send_cloud_loop_message")
+
+
+@pytest.fixture
 def mock_cloud_loop_message_get_payload(mocker):
     return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.get_payload")
 
