@@ -197,7 +197,7 @@ class TestGMailApi:
                                                    mock_google_api_get_whitelist,
                                                    mock_gmail_api_google_api_refresh_access_token_local,
                                                    mock_gmail_api_google_api_execute_request):
-        mock_gmail_api_get_message_size.return_value = '250'
+        mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         mock_gmail_api_google_api_execute_request.return_value = bob_skipped_email.email
         tmp_cred_file = tmp_path / 'credentials.json'
@@ -389,7 +389,7 @@ class TestGMailApi:
 
     def test__dissect_message__no_parts(self, mock_gmail_api_get_message_size,
                                         mock_google_api_get_whitelist):
-        mock_gmail_api_get_message_size.return_value = '250'
+        mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         sut = GMailAPI()
         message_from, message_subject, message_text = sut._dissect_message(bob_skipped_email.email['payload'])
@@ -406,7 +406,7 @@ class TestGMailApi:
 
     def test__dissect_message__two_parts(self, mock_gmail_api_get_message_size,
                                          mock_google_api_get_whitelist):
-        mock_gmail_api_get_message_size.return_value = '250'
+        mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         sut = GMailAPI()
         message_from, message_subject, message_text = sut._dissect_message(two_part_email.email['payload'])
@@ -418,7 +418,7 @@ class TestGMailApi:
 
     def test__dissect_message_parts_valid_payload(self, mock_gmail_api_get_message_size,
                                                   mock_google_api_get_whitelist):
-        mock_gmail_api_get_message_size.return_value = '250'
+        mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         sut = GMailAPI()
         message_text = sut._dissect_message_parts("test_sender@gmail.com", two_part_email.email['payload'])
@@ -428,7 +428,7 @@ class TestGMailApi:
 
     def test__dissect_message_parts_stripped_valid_message(self, mock_gmail_api_get_message_size,
                                                            mock_google_api_get_whitelist):
-        mock_gmail_api_get_message_size.return_value = '250'
+        mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         test_message_part = {"mimeType": "text/plain",
                              "body": {"size": 216,
@@ -516,7 +516,7 @@ class TestGMailApi:
 
     def test__dissect_message_parts_small_size_not_whitelisted(self, mock_gmail_api_get_message_size,
                                                                mock_google_api_get_whitelist):
-        mock_gmail_api_get_message_size.return_value = '250'
+        mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         test_message_part = {"mimeType": "text/plain",
                              "body": {"size": 216,
@@ -535,7 +535,7 @@ class TestGMailApi:
 
     def test__dissect_message_parts_large_size_not_whitelisted(self, mock_gmail_api_get_message_size,
                                                                mock_google_api_get_whitelist):
-        mock_gmail_api_get_message_size.return_value = '250'
+        mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         test_message_part = {"mimeType": "text/plain",
                              "body": {"size": 300,
@@ -552,7 +552,7 @@ class TestGMailApi:
 
     def test__dissect_message_parts_large_size_whitelisted(self, mock_gmail_api_get_message_size,
                                                            mock_google_api_get_whitelist):
-        mock_gmail_api_get_message_size.return_value = '250'
+        mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         test_message_part = {"mimeType": "text/plain",
                              "body": {"size": 300,

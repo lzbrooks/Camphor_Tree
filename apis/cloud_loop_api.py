@@ -1,3 +1,4 @@
+import random
 import re
 import requests
 
@@ -20,12 +21,20 @@ class HexEncodeForCloudLoop:
     def __init__(self, message_from=None, message_subject=None, message_to_encode=None):
         self.auth_token = Config.get_cloud_loop_auth_token()
         self.hardware_id = Config.get_rock_block_id()
+        self.max_chunk_size = Config.get_max_message_size()
+        self.contacts = Config.get_whitelist()
         if isinstance(message_from, list) or not message_from:
             self.message_from = message_from
         else:
             self.message_from = [message_from]
         self.message_to_encode = message_to_encode
         self.message_subject = message_subject
+        self.message_chunk_list = []
+        self.hex_message_id = self._assemble_hex_message_id()
+
+    @staticmethod
+    def _assemble_hex_message_id():
+        return "#{:06x}".format(random.randint(0, 0xFFFFFF))
 
     def send_cloud_loop_message(self):
         if self.message_to_encode:
@@ -37,10 +46,10 @@ class HexEncodeForCloudLoop:
 
     def get_payload(self):
         print("Message Encoding...")
-        self._chunk_message()
         self.message_from = self._email_to_contact_number(self.message_from)
+        self._chunk_message()
         payload_list = []
-        for part_number, message_text in enumerate(self.message_to_encode):
+        for part_number, message_text in enumerate(self.message_chunk_list):
             payload = self._assemble_payload_part(message_text, part_number)
             payload_list.append(payload)
         print("Message Encoded")
@@ -57,37 +66,33 @@ class HexEncodeForCloudLoop:
         print("Sent part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
 
     def _chunk_message(self):
-        length_of_message_from = len(self.message_from[0]) * len(self.message_from)
-        max_chunk_size = int(Config.get_max_message_size()) - length_of_message_from - len(self.message_subject)
+        self.message_chunk_list.append(self.message_subject[:self.max_chunk_size])
         total_message_length = len(self.message_to_encode)
-        if total_message_length > max_chunk_size:
-            self.message_to_encode = [self.message_to_encode[i: i + max_chunk_size]
-                                      for i in range(0, total_message_length, max_chunk_size)]
-        else:
-            self.message_to_encode = [self.message_to_encode]
-        print("Number of Message Chunks: " + str(len(self.message_to_encode)))
+        self.message_chunk_list += [self.message_to_encode[i: i + self.max_chunk_size]
+                                    for i in range(0, total_message_length, self.max_chunk_size)]
+        print("Number of Message Chunks: " + str(len(self.message_chunk_list)))
 
     def _assemble_payload_part(self, message_text, part_number):
-        payload = ""
-        for sender in self.message_from:
-            payload += sender + ","
-        payload += self.message_subject
-        payload += " (" + str(part_number + 1) + "/" + str(len(self.message_to_encode)) + ")" + ","
+        payload = self._assemble_payload_tagline(part_number)
         payload += message_text
         payload = payload.replace('\r', '').replace('\n', '')
         return payload
 
-    @staticmethod
-    def _email_to_contact_number(email_list):
-        contacts = Config.get_whitelist()
-        email_list = [HexEncodeForCloudLoop._get_contact_number_for_email(email) if email in contacts.values()
+    def _assemble_payload_tagline(self, part_number):
+        payload = ""
+        for sender in self.message_from:
+            payload += sender + ","
+        payload += self.hex_message_id
+        payload += f" ({part_number + 1}/{len(self.message_chunk_list)}),"
+        return payload
+
+    def _email_to_contact_number(self, email_list):
+        email_list = [self._get_contact_number_for_email(email) if email in self.contacts.values()
                       else email for email in email_list]
         return email_list
 
-    @staticmethod
-    def _get_contact_number_for_email(email):
-        contacts = Config.get_whitelist()
-        for contact_number, email_address in contacts.items():
+    def _get_contact_number_for_email(self, email):
+        for contact_number, email_address in self.contacts.items():
             if email_address == email:
                 return contact_number
 

@@ -170,12 +170,12 @@ class GMailAPI(GMailAuth):
                     and 'data' in message_part['body']:
                 size_in_bytes = message_part['body']['size']
                 print("Inspecting Message Size")
-                print("Max Message Size Allowed: " + self.max_message_size)
+                print("Max Message Size Allowed: " + str(self.max_message_size))
                 print("Current Message Size: " + str(size_in_bytes))
                 print("Message From: " + message_from)
-                if size_in_bytes < int(self.max_message_size):
+                if size_in_bytes < self.max_message_size:
                     message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
-                if size_in_bytes > int(self.max_message_size) \
+                if size_in_bytes > self.max_message_size \
                         and message_from in Config.get_whitelist().values():
                     message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
         return message_text
