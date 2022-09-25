@@ -97,6 +97,11 @@ def mock_cloud_loop_message_get_whitelist(mocker):
 
 
 @pytest.fixture
+def mock_cloud_loop_message_assemble_hex_message_id_local(mocker):
+    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop._assemble_hex_message_id")
+
+
+@pytest.fixture
 def mock_cloud_loop_message_assemble_hex_message_id(mocker):
     return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop._assemble_hex_message_id")
 

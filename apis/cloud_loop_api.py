@@ -32,10 +32,6 @@ class HexEncodeForCloudLoop:
         self.message_chunk_list = []
         self.hex_message_id = self._assemble_hex_message_id()
 
-    @staticmethod
-    def _assemble_hex_message_id():
-        return "#{:06x}".format(random.randint(0, 0xFFFFFF))
-
     def send_cloud_loop_message(self):
         if self.message_to_encode:
             payload_list = self.get_payload()
@@ -102,6 +98,10 @@ class HexEncodeForCloudLoop:
               "&payload=" + payload.encode().hex() + "&token=" + self.auth_token
         return url
 
+    @staticmethod
+    def _assemble_hex_message_id():
+        return "#{:06x}".format(random.randint(0, 0xFFFFFF))
+
 
 class DecodeCloudLoopMessage:
     def __init__(self, hex_message=None):
@@ -126,6 +126,7 @@ class DecodeCloudLoopMessage:
             self.hex_message = bytes.fromhex(self.hex_message)
         self.decoded_message = self.hex_message.decode()
 
+    # TODO: update to match new subject and chunking functionality in encoder
     def _extract_all_message_parts(self):
         self._message_parts = self.decoded_message.split(",")
         self._extract_message_subject()
