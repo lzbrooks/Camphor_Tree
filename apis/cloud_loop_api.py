@@ -53,13 +53,13 @@ class HexEncodeForCloudLoop:
 
     def _send_payload_part(self, payload, payload_list, payload_part_number):
         print("Sending CloudLoop Message")
-        print("Sending part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
+        print(f"Sending part {payload_part_number + 1} of {len(payload_list)}")
         url = self._get_cloud_loop_payload_url(payload)
         headers = {"Accept": "application/json"}
         response = requests.get(url, headers=headers)
         print(response)
         print(payload)
-        print("Sent part " + str(payload_part_number + 1) + " of " + str(len(payload_list)))
+        print(f"Sent part {payload_part_number + 1} of {len(payload_list)}")
 
     def _chunk_message(self):
         self.message_chunk_list.append(self.message_subject[:self.max_chunk_size])

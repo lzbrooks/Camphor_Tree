@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from apis.cloud_loop_api import HexEncodeForCloudLoop
@@ -130,20 +132,54 @@ class TestHexEncodeForCloudLoop:
         with pytest.raises(TypeError, match=r"'NoneType' object is not iterable"):
             test_cloud_loop.get_payload()
 
-    # TODO: testing
-    def test_get_payload(self, capfd,
-                         mock_cloud_loop_message_get_max_message_size,
-                         mock_cloud_loop_message_get_whitelist,
-                         mock_cloud_loop_api_requests_get):
+    def test_get_payload_valid_message_with_newlines(self, capfd,
+                                                     mock_cloud_loop_message_get_max_message_size,
+                                                     mock_cloud_loop_message_get_whitelist,
+                                                     mock_cloud_loop_message_assemble_hex_message_id_local,
+                                                     mock_cloud_loop_api_requests_get):
         mock_cloud_loop_message_get_max_message_size.return_value = 25
+        mock_cloud_loop_message_assemble_hex_message_id_local.return_value = "#fbc84a"
         mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         test_cloud_loop = HexEncodeForCloudLoop(message_from="test_sender@gmail.com",
                                                 message_subject="Info",
-                                                message_to_encode="Testing message text")
-        test_cloud_loop.get_payload()
+                                                message_to_encode="Testing message text\r\n")
+        payload_list = test_cloud_loop.get_payload()
         captured = capfd.readouterr()
-        assert captured == ""
+        assert captured.out == 'Message Encoding...\nNumber of Message Chunks: 2\nMessage Encoded\n'
+        assert test_cloud_loop.message_from == ["0"]
+        assert test_cloud_loop.message_chunk_list == ['Info', 'Testing message text\r\n']
+        assert payload_list == ['0,#fbc84a (1/2),Info', '0,#fbc84a (2/2),Testing message text']
 
+    def test_send_payload_part_valid_message(self, capfd,
+                                             mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                             mock_cloud_loop_api_get_rock_block_id,
+                                             mock_cloud_loop_message_get_max_message_size,
+                                             mock_cloud_loop_message_get_whitelist,
+                                             mock_cloud_loop_message_assemble_hex_message_id_local,
+                                             mock_cloud_loop_api_requests_get):
+        mock_cloud_loop_message_get_max_message_size.return_value = 25
+        mock_cloud_loop_api_get_rock_block_id.return_value = "2003"
+        mock_cloud_loop_api_get_cloud_loop_auth_token.return_value = "3"
+        mock_cloud_loop_message_assemble_hex_message_id_local.return_value = "#fbc84a"
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        mock_cloud_loop_api_requests_get.return_value = "200 Success"
+        test_payload = '0,#fbc84a (1/2),Info'
+        test_payload_list = [test_payload]
+        test_payload_part_number = 0
+        test_cloud_loop = HexEncodeForCloudLoop()
+        test_cloud_loop._send_payload_part(test_payload,
+                                           test_payload_list,
+                                           test_payload_part_number)
+        captured = capfd.readouterr()
+        mock_cloud_loop_api_requests_get.assert_called_with(
+            "https://api.cloudloop.com/DataMt/DoSendMessage?hardware=2003&payload"
+            "=302c236662633834612028312f32292c496e666f&token=3",
+            headers={'Accept': 'application/json'})
+        assert captured.out == ('Sending CloudLoop Message\n'
+                                'Sending part 1 of 1\n'
+                                '200 Success\n'
+                                '0,#fbc84a (1/2),Info\n'
+                                'Sent part 1 of 1\n')
 
     def test_chunk_message_multi_part_message(self, capfd,
                                               mock_cloud_loop_api_get_cloud_loop_auth_token,
@@ -162,8 +198,7 @@ class TestHexEncodeForCloudLoop:
         assert captured.out == 'Number of Message Chunks: 3\n'
         assert test_cloud_loop.hex_message_id
         assert test_cloud_loop.max_chunk_size == 25
-        # TODO: add back in
-        # assert test_cloud_loop.message_from == "0"
+        assert test_cloud_loop.message_from == ["test_sender@gmail.com"]
         assert test_cloud_loop.message_subject == "Info"
         assert test_cloud_loop.message_to_encode == 'testing hex encode extra extra extra extra long'
         assert test_cloud_loop.message_chunk_list == ['Info',
@@ -188,10 +223,226 @@ class TestHexEncodeForCloudLoop:
         assert captured.out == 'Number of Message Chunks: 2\n'
         assert test_cloud_loop.hex_message_id
         assert test_cloud_loop.max_chunk_size == 25
-        # TODO: add back in
-        # assert test_cloud_loop.message_from == "0"
+        assert test_cloud_loop.message_from == ["test_sender@gmail.com"]
         assert test_cloud_loop.message_subject == "Info"
         assert test_cloud_loop.message_to_encode == 'testing hex encode short'
         assert test_cloud_loop.message_chunk_list == ['Info',
                                                       'testing hex encode short']
         assert not mock_cloud_loop_api_requests_get.called
+
+    def test__assemble_payload_part_valid_message(self,
+                                                  mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                  mock_cloud_loop_api_get_rock_block_id,
+                                                  mock_cloud_loop_message_get_max_message_size,
+                                                  mock_cloud_loop_message_get_whitelist,
+                                                  mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_assemble_hex_message_id_local.return_value = "#fbc84a"
+        test_cloud_loop = HexEncodeForCloudLoop(message_from="test_sender@gmail.com",
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload")
+        payload_part = test_cloud_loop._assemble_payload_part("Testing payload", 1)
+        assert payload_part == "test_sender@gmail.com,#fbc84a (2/0),Testing payload"
+
+    def test__assemble_payload_part_with_newlines(self,
+                                                  mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                  mock_cloud_loop_api_get_rock_block_id,
+                                                  mock_cloud_loop_message_get_max_message_size,
+                                                  mock_cloud_loop_message_get_whitelist,
+                                                  mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_assemble_hex_message_id_local.return_value = "#fbc84a"
+        test_cloud_loop = HexEncodeForCloudLoop(message_from="test_sender@gmail.com",
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._assemble_payload_part("Testing payload\r\n", 1)
+        assert payload_part == "test_sender@gmail.com,#fbc84a (2/0),Testing payload"
+
+    def test__assemble_payload_part_no_message(self,
+                                               mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                               mock_cloud_loop_api_get_rock_block_id,
+                                               mock_cloud_loop_message_get_max_message_size,
+                                               mock_cloud_loop_message_get_whitelist):
+        test_cloud_loop = HexEncodeForCloudLoop()
+        with pytest.raises(TypeError, match=r"'NoneType' object is not iterable"):
+            test_cloud_loop._assemble_payload_part(None, None)
+
+    def test__assemble_payload_tagline_single_sender(self,
+                                                     mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                     mock_cloud_loop_api_get_rock_block_id,
+                                                     mock_cloud_loop_message_get_max_message_size,
+                                                     mock_cloud_loop_message_get_whitelist,
+                                                     mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_assemble_hex_message_id_local.return_value = "#fbc84a"
+        test_cloud_loop = HexEncodeForCloudLoop(message_from="test_sender@gmail.com",
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._assemble_payload_tagline(1)
+        assert payload_part == "test_sender@gmail.com,#fbc84a (2/0),"
+
+    def test__assemble_payload_tagline_multiple_senders(self,
+                                                        mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                        mock_cloud_loop_api_get_rock_block_id,
+                                                        mock_cloud_loop_message_get_max_message_size,
+                                                        mock_cloud_loop_message_get_whitelist,
+                                                        mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_assemble_hex_message_id_local.return_value = "#fbc84a"
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["test_sender_1@gmail.com",
+                                                              "test_sender_2@gmail.com"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._assemble_payload_tagline(1)
+        assert payload_part == "test_sender_1@gmail.com,test_sender_2@gmail.com,#fbc84a (2/0),"
+
+    def test__assemble_payload_tagline_int_contacts(self,
+                                                    mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                    mock_cloud_loop_api_get_rock_block_id,
+                                                    mock_cloud_loop_message_get_max_message_size,
+                                                    mock_cloud_loop_message_get_whitelist,
+                                                    mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_assemble_hex_message_id_local.return_value = "#fbc84a"
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._assemble_payload_tagline(1)
+        assert payload_part == "0,13,#fbc84a (2/0),"
+
+    def test__email_to_contact_number_no_emails(self,
+                                                mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                mock_cloud_loop_api_get_rock_block_id,
+                                                mock_cloud_loop_message_get_max_message_size,
+                                                mock_cloud_loop_message_get_whitelist,
+                                                mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._email_to_contact_number([])
+        assert not payload_part
+
+    def test__email_to_contact_number_whitelisted_email(self,
+                                                        mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                        mock_cloud_loop_api_get_rock_block_id,
+                                                        mock_cloud_loop_message_get_max_message_size,
+                                                        mock_cloud_loop_message_get_whitelist,
+                                                        mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._email_to_contact_number(["test_sender@gmail.com"])
+        assert payload_part == ['0']
+
+    def test__email_to_contact_number_not_whitelisted(self,
+                                                      mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                      mock_cloud_loop_api_get_rock_block_id,
+                                                      mock_cloud_loop_message_get_max_message_size,
+                                                      mock_cloud_loop_message_get_whitelist,
+                                                      mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._email_to_contact_number(["test_sender_nope@gmail.com"])
+        assert payload_part == ['test_sender_nope@gmail.com']
+
+    def test__email_to_contact_number_multiple_whitelisted(self,
+                                                           mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                           mock_cloud_loop_api_get_rock_block_id,
+                                                           mock_cloud_loop_message_get_max_message_size,
+                                                           mock_cloud_loop_message_get_whitelist,
+                                                           mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._email_to_contact_number(["test_sender_1@gmail.com",
+                                                                 "test_sender_2@gmail.com"])
+        assert payload_part == ['0', '1']
+
+    def test__email_to_contact_number_multiple_not_whitelisted(self,
+                                                               mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                               mock_cloud_loop_api_get_rock_block_id,
+                                                               mock_cloud_loop_message_get_max_message_size,
+                                                               mock_cloud_loop_message_get_whitelist,
+                                                               mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._email_to_contact_number(["test_sender_3@gmail.com",
+                                                                 "test_sender_4@gmail.com"])
+        assert payload_part == ['test_sender_3@gmail.com', 'test_sender_4@gmail.com']
+
+    def test__email_to_contact_number_whitelisted_and_not(self,
+                                                          mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                          mock_cloud_loop_api_get_rock_block_id,
+                                                          mock_cloud_loop_message_get_max_message_size,
+                                                          mock_cloud_loop_message_get_whitelist,
+                                                          mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._email_to_contact_number(["test_sender_1@gmail.com",
+                                                                 "test_sender_4@gmail.com"])
+        assert payload_part == ['0', 'test_sender_4@gmail.com']
+
+    def test__get_contact_number_for_email_whitelisted(self,
+                                                       mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                       mock_cloud_loop_api_get_rock_block_id,
+                                                       mock_cloud_loop_message_get_max_message_size,
+                                                       mock_cloud_loop_message_get_whitelist,
+                                                       mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._get_contact_number_for_email("test_sender_1@gmail.com")
+        assert payload_part == '0'
+
+    def test__get_contact_number_for_email_not_whitelisted(self,
+                                                           mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                           mock_cloud_loop_api_get_rock_block_id,
+                                                           mock_cloud_loop_message_get_max_message_size,
+                                                           mock_cloud_loop_message_get_whitelist,
+                                                           mock_cloud_loop_message_assemble_hex_message_id_local):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_cloud_loop = HexEncodeForCloudLoop(message_from=["0",
+                                                              "13"],
+                                                message_subject="Info",
+                                                message_to_encode="Testing payload\r\n")
+        payload_part = test_cloud_loop._get_contact_number_for_email("test_sender_3@gmail.com")
+        assert not payload_part
+
+    def test__get_cloud_loop_payload_url_valid_params(self,
+                                                      mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                      mock_cloud_loop_api_get_rock_block_id,
+                                                      mock_cloud_loop_message_get_max_message_size,
+                                                      mock_cloud_loop_message_get_whitelist):
+        test_hardware_id = "2003"
+        test_auth_token = "3"
+        mock_cloud_loop_api_get_rock_block_id.return_value = test_hardware_id
+        mock_cloud_loop_api_get_cloud_loop_auth_token.return_value = test_auth_token
+        test_payload = '0,#fbc84a (1/2),Info'
+        test_encoded_payload = test_payload.encode().hex()
+        test_url = f"https://api.cloudloop.com/DataMt/DoSendMessage?hardware={test_hardware_id}" \
+                   f"&payload={test_encoded_payload}&token={test_auth_token}"
+        test_cloud_loop = HexEncodeForCloudLoop()
+        returned_url = test_cloud_loop._get_cloud_loop_payload_url(test_payload)
+        assert returned_url == test_url
+
+    def test__assemble_hex_message_id(self):
+        returned_hex_id = HexEncodeForCloudLoop()._assemble_hex_message_id()
+        assert re.findall(r"#[a-fA-F\d]{6}", returned_hex_id)
