@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from apis.cloud_loop_api import HexEncodeForCloudLoop
+from apis.cloud_loop_api import HexEncodeForCloudLoop, DecodeCloudLoopMessage
 
 
 class TestHexEncodeForCloudLoop:
@@ -446,3 +446,55 @@ class TestHexEncodeForCloudLoop:
     def test__assemble_hex_message_id(self):
         returned_hex_id = HexEncodeForCloudLoop()._assemble_hex_message_id()
         assert re.findall(r"#[a-fA-F\d]{6}", returned_hex_id)
+
+
+class TestDecodeCloudLoopMessage:
+    # TODO: testing
+    def test_decode_hex_message(self):
+        test_hex_string = "test_sender@gmail.com,#fbc84a (2/0),Testing payload".encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop.decode_hex_message()
+        assert test_cloud_loop.decoded_message == "test_sender@gmail.com,#fbc84a (2/0),Testing payload"
+        assert test_cloud_loop.recipient_list == ["test_sender@gmail.com"]
+        assert test_cloud_loop.message_subject == "#fbc84a (2/0)"
+        assert test_cloud_loop.message_text == "Testing payload"
+
+    def test_decode_hex_message_no_message(self):
+        test_cloud_loop = DecodeCloudLoopMessage()
+        with pytest.raises(TypeError, match=r"fromhex\(\) argument must be str, not None"):
+            test_cloud_loop.decode_hex_message()
+        assert not test_cloud_loop.recipient_list
+        assert not test_cloud_loop.message_subject
+        assert not test_cloud_loop.message_text
+
+    def test__decode_message_from_hex_string(self, capfd):
+        test_hex_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload".encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
+        captured = capfd.readouterr()
+        assert captured.out == "Changing Hex to Bytes\n"
+        assert test_cloud_loop.decoded_message == "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
+
+    def test__decode_message_from_hex_bytes(self, capfd):
+        test_hex_string = bytes.fromhex("test_sender@gmail.com,#fbc84a (2/2),Testing payload".encode().hex())
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
+        captured = capfd.readouterr()
+        assert not captured.out
+        assert test_cloud_loop.decoded_message == "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
+
+    def test__decode_message_from_hex_no_message(self):
+        test_cloud_loop = DecodeCloudLoopMessage()
+        with pytest.raises(TypeError, match=r"fromhex\(\) argument must be str, not None"):
+            test_cloud_loop._decode_message_from_hex()
+        assert not test_cloud_loop.decoded_message
+
+    # TODO: testing
+    def test__extract_all_message_parts(self):
+        test_hex_string = "test_sender@gmail.com,#fbc84a (2/0),Testing payload".encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_all_message_parts()
+        assert test_cloud_loop.decoded_message == "test_sender@gmail.com,#fbc84a (2/0),Testing payload"
+        assert test_cloud_loop.recipient_list == ["test_sender@gmail.com"]
+        assert test_cloud_loop.message_subject == "#fbc84a (2/0)"
+        assert test_cloud_loop.message_text == "Testing payload"
