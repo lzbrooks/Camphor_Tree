@@ -18,7 +18,6 @@ def send_satellite_message(email, info_level, message_body, server_option):
         rock_block_api.send_data_out(rock_block_message.get_payload())
         send_status = 'Send Success'
     else:
-        # TODO: test for incorrect server option
         send_status = 'Incorrect Server Mode'
     return send_status
 
