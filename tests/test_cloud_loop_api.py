@@ -449,14 +449,20 @@ class TestHexEncodeForCloudLoop:
 
 
 class TestDecodeCloudLoopMessage:
-    # TODO: testing
-    def test_decode_hex_message(self):
-        test_hex_string = "test_sender@gmail.com,#fbc84a (2/0),Testing payload".encode().hex()
+    def test_decode_hex_message(self, capfd):
+        test_hex_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload".encode().hex()
         test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
         test_cloud_loop.decode_hex_message()
-        assert test_cloud_loop.decoded_message == "test_sender@gmail.com,#fbc84a (2/0),Testing payload"
+        captured = capfd.readouterr()
+        assert captured.out == ('Hex Message Processing...\n'
+                                'Changing Hex to Bytes\n'
+                                "['test_sender@gmail.com']\n"
+                                '#fbc84a (2/2)\n'
+                                'Testing payload\n'
+                                'Hex Message Processed\n')
+        assert test_cloud_loop.decoded_message == "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
         assert test_cloud_loop.recipient_list == ["test_sender@gmail.com"]
-        assert test_cloud_loop.message_subject == "#fbc84a (2/0)"
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
         assert test_cloud_loop.message_text == "Testing payload"
 
     def test_decode_hex_message_no_message(self):
@@ -489,7 +495,6 @@ class TestDecodeCloudLoopMessage:
             test_cloud_loop._decode_message_from_hex()
         assert not test_cloud_loop.decoded_message
 
-    # TODO: testing
     def test__extract_all_message_parts_not_whitelisted(self, capfd):
         test_hex_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload".encode().hex()
         test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
@@ -654,8 +659,7 @@ class TestDecodeCloudLoopMessage:
         assert not test_cloud_loop.recipient_list
         assert not test_cloud_loop._message_text_list
 
-    # TODO: testing
-    def test__extract_message_recipient_not_whitelisted(self, mock_cloud_loop_message_get_whitelist):
+    def test__assemble_message_recipient_list_not_whitelisted(self, mock_cloud_loop_message_get_whitelist):
         mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
                                                               "1": "test_sender_2@gmail.com"}
         test_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
@@ -669,7 +673,7 @@ class TestDecodeCloudLoopMessage:
         assert test_cloud_loop.recipient_list == ["test_sender@gmail.com"]
         assert test_cloud_loop._message_text_list == ["Testing payload"]
 
-    def test__extract_message_recipient_whitelisted(self, mock_cloud_loop_message_get_whitelist):
+    def test__assemble_message_recipient_list_whitelisted(self, mock_cloud_loop_message_get_whitelist):
         mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
                                                               "1": "test_sender_2@gmail.com"}
         test_string = "0,#fbc84a (2/2),Testing payload"
@@ -683,7 +687,7 @@ class TestDecodeCloudLoopMessage:
         assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com"]
         assert test_cloud_loop._message_text_list == ["Testing payload"]
 
-    def test__extract_message_recipient_multiple_recipients(self, mock_cloud_loop_message_get_whitelist):
+    def test__assemble_message_recipient_list_multiple_recipients(self, mock_cloud_loop_message_get_whitelist):
         mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
                                                               "1": "test_sender_2@gmail.com"}
         test_string = "0,test_sender@gmail.com,#fbc84a (2/2),Testing payload"
@@ -697,7 +701,7 @@ class TestDecodeCloudLoopMessage:
         assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com", "test_sender@gmail.com"]
         assert test_cloud_loop._message_text_list == ["Testing payload"]
 
-    def test__extract_message_recipient_multiple_text_parts(self, mock_cloud_loop_message_get_whitelist):
+    def test__assemble_message_recipient_list_multiple_text_parts(self, mock_cloud_loop_message_get_whitelist):
         mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
                                                               "1": "test_sender_2@gmail.com"}
         test_string = "0,#fbc84a (2/2),Testing payload, second part of sentence"
@@ -711,7 +715,7 @@ class TestDecodeCloudLoopMessage:
         assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com"]
         assert test_cloud_loop._message_text_list == ["Testing payload", " second part of sentence"]
 
-    def test__extract_message_recipient_no_subject(self, mock_cloud_loop_message_get_whitelist):
+    def test__assemble_message_recipient_list_no_subject(self, mock_cloud_loop_message_get_whitelist):
         mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
                                                               "1": "test_sender_2@gmail.com"}
         test_string = "0,No Subject,Testing payload"
@@ -725,7 +729,7 @@ class TestDecodeCloudLoopMessage:
         assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com"]
         assert test_cloud_loop._message_text_list == test_split_string
 
-    def test__extract_message_recipient_no_message(self, mock_cloud_loop_message_get_whitelist):
+    def test__assemble_message_recipient_list_no_message(self, mock_cloud_loop_message_get_whitelist):
         mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
                                                               "1": "test_sender_2@gmail.com"}
         test_string = "0,#fbc84a (2/2),Testing payload"
@@ -735,3 +739,74 @@ class TestDecodeCloudLoopMessage:
         assert not test_cloud_loop.message_subject
         assert not test_cloud_loop.recipient_list
         assert not test_cloud_loop._message_text_list
+
+    def test__get_recipient_list_whitelisted(self):
+        test_string = "0,No Subject,Testing payload"
+        test_split_string = test_string.split(",")
+        returned_recipient_list = DecodeCloudLoopMessage()._get_recipient_list(test_split_string)
+        assert returned_recipient_list == ["0"]
+
+    def test__get_recipient_list_not_whitelisted(self):
+        test_string = "test_sender@gmail.com,No Subject,Testing payload"
+        test_split_string = test_string.split(",")
+        returned_recipient_list = DecodeCloudLoopMessage()._get_recipient_list(test_split_string)
+        assert returned_recipient_list == ["test_sender@gmail.com"]
+
+    def test__get_recipient_list_not_whitelisted_multiple(self):
+        test_string = "test_sender_1@gmail.com,test_sender_2@gmail.com,No Subject,Testing payload"
+        test_split_string = test_string.split(",")
+        returned_recipient_list = DecodeCloudLoopMessage()._get_recipient_list(test_split_string)
+        assert returned_recipient_list == ["test_sender_1@gmail.com", "test_sender_2@gmail.com"]
+
+    def test__get_recipient_list_no_recipients(self):
+        test_string = ""
+        test_split_string = test_string.split(",")
+        returned_recipient_list = DecodeCloudLoopMessage()._get_recipient_list(test_split_string)
+        assert returned_recipient_list == []
+
+    def test__contact_number_to_email_whitelisted(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_emails = ["0"]
+        test_cloud_loop = DecodeCloudLoopMessage()
+        returned_email_list = test_cloud_loop._contact_number_to_email(test_emails)
+        assert returned_email_list == ["test_sender_1@gmail.com"]
+
+    def test__contact_number_to_email_not_whitelisted(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_emails = ["test_sender@gmail.com"]
+        test_cloud_loop = DecodeCloudLoopMessage()
+        returned_email_list = test_cloud_loop._contact_number_to_email(test_emails)
+        assert returned_email_list == ["test_sender@gmail.com"]
+
+    def test__contact_number_to_email_whitelisted_multiple(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_emails = ["1", "0"]
+        test_cloud_loop = DecodeCloudLoopMessage()
+        returned_email_list = test_cloud_loop._contact_number_to_email(test_emails)
+        assert returned_email_list == ["test_sender_2@gmail.com", "test_sender_1@gmail.com"]
+
+    def test__contact_number_to_email_no_emails(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_emails = []
+        test_cloud_loop = DecodeCloudLoopMessage()
+        returned_email_list = test_cloud_loop._contact_number_to_email(test_emails)
+        assert returned_email_list == []
+
+    def test__get_email_for_contact_number_whitelisted(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_email = "0"
+        test_cloud_loop = DecodeCloudLoopMessage()
+        returned_email = test_cloud_loop._get_email_for_contact_number(test_email)
+        assert returned_email == "test_sender_1@gmail.com"
+
+    def test__get_email_for_contact_number_no_contact(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_cloud_loop = DecodeCloudLoopMessage()
+        returned_email = test_cloud_loop._get_email_for_contact_number(None)
+        assert not returned_email
