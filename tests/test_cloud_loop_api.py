@@ -490,11 +490,248 @@ class TestDecodeCloudLoopMessage:
         assert not test_cloud_loop.decoded_message
 
     # TODO: testing
-    def test__extract_all_message_parts(self):
-        test_hex_string = "test_sender@gmail.com,#fbc84a (2/0),Testing payload".encode().hex()
+    def test__extract_all_message_parts_not_whitelisted(self, capfd):
+        test_hex_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload".encode().hex()
         test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
         test_cloud_loop._extract_all_message_parts()
-        assert test_cloud_loop.decoded_message == "test_sender@gmail.com,#fbc84a (2/0),Testing payload"
+        captured = capfd.readouterr()
+        assert captured.out == ('Changing Hex to Bytes\n'
+                                "['test_sender@gmail.com']\n"
+                                '#fbc84a (2/2)\n'
+                                'Testing payload\n')
+        assert test_cloud_loop.decoded_message == "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
         assert test_cloud_loop.recipient_list == ["test_sender@gmail.com"]
-        assert test_cloud_loop.message_subject == "#fbc84a (2/0)"
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
         assert test_cloud_loop.message_text == "Testing payload"
+
+    def test__extract_all_message_parts_whitelisted(self, capfd, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_hex_string = "0,#fbc84a (2/2),Testing payload".encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
+        test_cloud_loop._extract_all_message_parts()
+        captured = capfd.readouterr()
+        assert captured.out == ('Changing Hex to Bytes\n'
+                                "['test_sender_1@gmail.com']\n"
+                                '#fbc84a (2/2)\n'
+                                'Testing payload\n')
+        assert test_cloud_loop.decoded_message == '0,#fbc84a (2/2),Testing payload'
+        assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com"]
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.message_text == "Testing payload"
+
+    def test__extract_all_message_parts_no_subject(self, capfd, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_hex_string = "0,No Subject,Testing payload".encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
+        test_cloud_loop._extract_all_message_parts()
+        captured = capfd.readouterr()
+        assert captured.out == ('Changing Hex to Bytes\n'
+                                "['test_sender_1@gmail.com']\n"
+                                '\n'
+                                '0No SubjectTesting payload\n')
+        assert test_cloud_loop.decoded_message == '0,No Subject,Testing payload'
+        assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com"]
+        assert not test_cloud_loop.message_subject
+        assert test_cloud_loop.message_text == '0No SubjectTesting payload'
+
+    def test__extract_all_message_parts_no_message(self, capfd, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_cloud_loop = DecodeCloudLoopMessage()
+        with pytest.raises(AttributeError, match=r"'NoneType' object has no attribute 'split'"):
+            test_cloud_loop._extract_all_message_parts()
+        captured = capfd.readouterr()
+        assert not captured.out
+        assert not test_cloud_loop.decoded_message
+        assert test_cloud_loop.recipient_list == []
+        assert not test_cloud_loop.message_subject
+        assert not test_cloud_loop.message_text
+
+    def test__extract_message_subject_not_whitelisted(self):
+        test_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
+        test_cloud_loop._extract_message_subject(test_string.split(","))
+        assert test_cloud_loop.decoded_message == test_string
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+
+    def test__extract_message_subject_whitelisted(self):
+        test_string = "0,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
+        test_cloud_loop._extract_message_subject(test_string.split(","))
+        assert test_cloud_loop.decoded_message == test_string
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+
+    def test__extract_message_subject_no_subject(self):
+        test_string = "0,No Subject,Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
+        with pytest.raises(TypeError, match=r"'NoneType' object is not iterable"):
+            test_cloud_loop._extract_message_subject(None)
+        assert test_cloud_loop.decoded_message == test_string
+        assert not test_cloud_loop.message_subject
+
+    def test__extract_message_subject_no_message(self):
+        test_string = "0,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._decode_message_from_hex()
+        with pytest.raises(TypeError, match=r"'NoneType' object is not iterable"):
+            test_cloud_loop._extract_message_subject(None)
+        assert test_cloud_loop.decoded_message == test_string
+        assert not test_cloud_loop.message_subject
+
+    def test__split_on_subject_not_whitelisted(self):
+        test_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.recipient_list == ["test_sender@gmail.com"]
+        assert test_cloud_loop._message_text_list == ["Testing payload"]
+
+    def test__split_on_subject_whitelisted(self):
+        test_string = "0,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.recipient_list == ["0"]
+        assert test_cloud_loop._message_text_list == ["Testing payload"]
+
+    def test__split_on_subject_multiple_recipients(self):
+        test_string = "0,test_sender@gmail.com,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.recipient_list == ["0", "test_sender@gmail.com"]
+        assert test_cloud_loop._message_text_list == ["Testing payload"]
+
+    def test__split_on_subject_multiple_text_parts(self):
+        test_string = "0,#fbc84a (2/2),Testing payload, second part of sentence"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.recipient_list == ["0"]
+        assert test_cloud_loop._message_text_list == ["Testing payload", " second part of sentence"]
+
+    def test__split_on_subject_no_subject(self):
+        test_string = "0,No Subject,Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        assert not test_cloud_loop.message_subject
+        assert test_cloud_loop.recipient_list == test_split_string
+        assert test_cloud_loop._message_text_list == test_split_string
+
+    def test__split_on_subject_no_message(self):
+        test_string = "0,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._split_on_subject(None)
+        assert not test_cloud_loop.message_subject
+        assert not test_cloud_loop.recipient_list
+        assert not test_cloud_loop._message_text_list
+
+    # TODO: testing
+    def test__extract_message_recipient_not_whitelisted(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        test_cloud_loop._assemble_message_recipient_list()
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.recipient_list == ["test_sender@gmail.com"]
+        assert test_cloud_loop._message_text_list == ["Testing payload"]
+
+    def test__extract_message_recipient_whitelisted(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_string = "0,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        test_cloud_loop._assemble_message_recipient_list()
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com"]
+        assert test_cloud_loop._message_text_list == ["Testing payload"]
+
+    def test__extract_message_recipient_multiple_recipients(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_string = "0,test_sender@gmail.com,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        test_cloud_loop._assemble_message_recipient_list()
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com", "test_sender@gmail.com"]
+        assert test_cloud_loop._message_text_list == ["Testing payload"]
+
+    def test__extract_message_recipient_multiple_text_parts(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_string = "0,#fbc84a (2/2),Testing payload, second part of sentence"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        test_cloud_loop._assemble_message_recipient_list()
+        assert test_cloud_loop.message_subject == "#fbc84a (2/2)"
+        assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com"]
+        assert test_cloud_loop._message_text_list == ["Testing payload", " second part of sentence"]
+
+    def test__extract_message_recipient_no_subject(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_string = "0,No Subject,Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_split_string = test_string.split(",")
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._extract_message_subject(test_split_string)
+        test_cloud_loop._split_on_subject(test_split_string)
+        test_cloud_loop._assemble_message_recipient_list()
+        assert not test_cloud_loop.message_subject
+        assert test_cloud_loop.recipient_list == ["test_sender_1@gmail.com"]
+        assert test_cloud_loop._message_text_list == test_split_string
+
+    def test__extract_message_recipient_no_message(self, mock_cloud_loop_message_get_whitelist):
+        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
+                                                              "1": "test_sender_2@gmail.com"}
+        test_string = "0,#fbc84a (2/2),Testing payload"
+        test_hex_string = test_string.encode().hex()
+        test_cloud_loop = DecodeCloudLoopMessage(test_hex_string)
+        test_cloud_loop._assemble_message_recipient_list()
+        assert not test_cloud_loop.message_subject
+        assert not test_cloud_loop.recipient_list
+        assert not test_cloud_loop._message_text_list

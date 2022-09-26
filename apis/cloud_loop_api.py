@@ -105,9 +105,9 @@ class HexEncodeForCloudLoop:
 
 class DecodeCloudLoopMessage:
     def __init__(self, hex_message=None):
+        self.contacts = Config.get_whitelist()
         self.hex_message = hex_message
         self.decoded_message = None
-        self._message_parts = None
         self._message_text_list = []
         self.recipient_list = []
         self.message_subject = None
@@ -126,46 +126,33 @@ class DecodeCloudLoopMessage:
             self.hex_message = bytes.fromhex(self.hex_message)
         self.decoded_message = self.hex_message.decode()
 
-    # TODO: update to match new subject and chunking functionality in encoder
     def _extract_all_message_parts(self):
-        self._message_parts = self.decoded_message.split(",")
-        self._extract_message_subject()
-        self._split_on_subject()
-        self._extract_message_recipient_and_text()
+        message_parts = self.decoded_message.split(",")
+        self._extract_message_subject(message_parts)
+        self._split_on_subject(message_parts)
+        self._assemble_message_recipient_list()
+        self.message_text = "".join(self._message_text_list)
         print(self.recipient_list)
         print(self.message_subject)
         print(self.message_text)
 
-    def _extract_message_subject(self):
-        info_subjects = [subject for subject in self._message_parts if re.search(r'Info \(./.\)', subject)]
-        urgent_subjects = [subject for subject in self._message_parts if re.search(r'Urgent \(./.\)', subject)]
-        emergency_subjects = [subject for subject in self._message_parts if re.search(r'Emergency \(./.\)', subject)]
-        if info_subjects:
-            message_subject = info_subjects[0]
-        elif urgent_subjects:
-            message_subject = urgent_subjects[0]
-        elif emergency_subjects:
-            message_subject = emergency_subjects[0]
-        else:
-            message_subject = None
-        self.message_subject = message_subject
+    def _extract_message_subject(self, message_parts):
+        message_subjects = [subject for subject in message_parts if re.search(r'#[a-fA-F\d]{6}', subject)]
+        if message_subjects:
+            self.message_subject = message_subjects[0]
 
-    def _split_on_subject(self):
+    def _split_on_subject(self, message_parts):
         if self.message_subject:
-            self.recipient_list = self._message_parts[:self._message_parts.index(self.message_subject)]
-            self._message_text_list = self._message_parts[self._message_parts.index(self.message_subject) + 1:]
+            self.recipient_list = message_parts[:message_parts.index(self.message_subject)]
+            self._message_text_list = message_parts[message_parts.index(self.message_subject) + 1:]
         else:
             self.message_subject = ""
-            self.recipient_list = self._message_parts
-            self._message_text_list = self._message_parts
+            self.recipient_list = message_parts
+            self._message_text_list = message_parts
 
-    def _extract_message_recipient_and_text(self):
+    def _assemble_message_recipient_list(self):
         recipient_list_filtered = self._get_recipient_list(self.recipient_list)
-        recipient_list_mapped = self._contact_number_to_email(recipient_list_filtered)
-        if len(recipient_list_mapped) < len(self.recipient_list):
-            self._message_text_list = self._message_parts
-        self.recipient_list = recipient_list_mapped
-        self.message_text = "".join(self._message_text_list)
+        self.recipient_list = self._contact_number_to_email(recipient_list_filtered)
 
     @staticmethod
     def _get_recipient_list(message_parts):
@@ -178,9 +165,7 @@ class DecodeCloudLoopMessage:
                       else email for email in email_list]
         return email_list
 
-    @staticmethod
-    def _get_email_for_contact_number(contact):
-        contacts = Config.get_whitelist()
-        for contact_number, email_address in contacts.items():
+    def _get_email_for_contact_number(self, contact):
+        for contact_number, email_address in self.contacts.items():
             if contact_number == contact:
                 return email_address
