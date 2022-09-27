@@ -16,7 +16,6 @@ class Config:
         else:
             return 'satsuki'
 
-    # TODO: test
     @staticmethod
     def get_relay_switch():
         # CAMPHOR_TREE_RELAY=True
@@ -64,7 +63,6 @@ class Config:
         info_levels = [('Emergency', 'Emergency'), ('Urgent', 'Urgent'), ('Info', 'Info')]
         return info_levels
 
-    # TODO: test
     @staticmethod
     def get_google_client_credentials_file():
         if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ:
@@ -72,7 +70,6 @@ class Config:
         else:
             return 'credentials.json'
 
-    # TODO: test
     @staticmethod
     def get_google_access_token_file():
         if 'CAMPHOR_TREE_ACCESS_TOKEN_FILE' in os.environ:
