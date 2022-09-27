@@ -4,6 +4,7 @@ import os.path
 
 import re
 import base64
+import sys
 from email.message import EmailMessage
 from typing import Tuple
 import logging
@@ -34,7 +35,11 @@ class GMailAuth:
             'labelFilterAction': 'include',
             'topicName': self.google_topic
         }
-        return self._google_api_re_watch(request)
+        response = self._google_api_re_watch(request)
+        if 'historyId' in response.json():
+            print("GMail Re-Watch Success")
+        else:
+            print("Gmail Re-Watch Failure")
 
     def refresh_with_browser(self):
         flow = InstalledAppFlow.from_client_secrets_file(
@@ -60,9 +65,11 @@ class GMailAuth:
                 raise ValueError("No Valid Refresh Token")
             self._save_creds_to_file()
 
+    # TODO: test
     def _save_creds_to_file(self):
         with open(self.token_file, 'w') as token:
             token.write(self.creds.to_json())
+        print(f"Token Written To {self.token_file}")
 
     def _google_api_re_watch(self, request):
         with build('gmail', 'v1', credentials=self.creds) as service:
@@ -197,6 +204,20 @@ class GMailAPI(GMailAuth):
             return self._google_api_execute_request(get_message_http_request)
 
 
-if __name__ == "__main__":  # pragma: no cover
-    gmail_re_watch = GMailAuth()
-    print(gmail_re_watch.re_watch())
+if __name__ == "__main__":
+    if sys.argv[0]:
+        gmail_auth = GMailAuth()
+        if sys.argv[0] == "re_watch":
+            gmail_auth.re_watch()
+        elif sys.argv[0] == "refresh":
+            gmail_auth.refresh_with_browser()
+            print(f"\nUpdate Python Anywhere .env file "
+                  f"CAMPHOR_TREE_REFRESH_TOKEN with {gmail_auth.token_file} contents")
+        else:
+            print(f"Arguments {sys.argv} given are not valid")
+            print("Valid arguments are either 're_watch' or 'refresh'")
+            print("\nEnvironment Variables needed are:")
+            print("GOOGLE_APPLICATION_CREDENTIALS: 'credentials.json' client credentials file path")
+            print("CAMPHOR_TREE_ACCESS_TOKEN_FILE: 'token.json' refresh token file path")
+            print("\nre_watch specific environment variable needed is:")
+            print("CAMPHOR_TREE_TOPIC: google pub/sub topic string")
