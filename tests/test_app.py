@@ -330,7 +330,8 @@ class TestAppConsoleFlowIntegration:
 
     def test_email_page_valid_email_mei(self, client,
                                         mock_get_sister,
-                                        mock_rock_block_api_set_up_uart,
+                                        mock_rock_block_api_serial,
+                                        mock_rock_block_api_adafruit_rockblock,
                                         mock_rock_block_api_set_data_out,
                                         mock_cloud_loop_message_get_max_message_size,
                                         mock_cloud_loop_message_get_whitelist,

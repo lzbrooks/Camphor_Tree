@@ -146,8 +146,13 @@ def mock_cloud_loop_api_requests_get(mocker):
 
 
 @pytest.fixture
-def mock_rock_block_api_set_up_uart(mocker):
-    return mocker.patch("apis.camphor_tree_api.RockBlockAPI._set_up_uart")
+def mock_rock_block_api_serial(mocker):
+    return mocker.patch("apis.rock_block_api.serial.Serial")
+
+
+@pytest.fixture
+def mock_rock_block_api_adafruit_rockblock(mocker):
+    return mocker.patch("apis.rock_block_api.RockBlock")
 
 
 @pytest.fixture
@@ -163,6 +168,16 @@ def mock_rock_block_api_get_satellite_transfer(mocker):
 @pytest.fixture
 def mock_rock_block_api_set_data_out(mocker):
     return mocker.patch("apis.rock_block_api.RockBlockAPI._set_data_out")
+
+
+@pytest.fixture
+def mock_rock_block_api_get_data_in(mocker):
+    return mocker.patch("apis.rock_block_api.RockBlockAPI._get_data_in")
+
+
+@pytest.fixture
+def mock_rock_block_api_assemble_message_file_name(mocker):
+    return mocker.patch("apis.rock_block_api.RockBlockAPI._assemble_message_file_name")
 
 
 @pytest.fixture

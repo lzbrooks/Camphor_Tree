@@ -19,26 +19,24 @@ class TestCamphorTreeApi:
         assert send_status == 'Send Success'
 
     def test_send_satellite_message_mei(self, mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                        mock_rock_block_api_serial,
+                                        mock_rock_block_api_adafruit_rockblock,
                                         mock_cloud_loop_api_get_rock_block_id,
                                         mock_cloud_loop_message_get_payload,
-                                        mock_rock_block_api_set_up_uart,
                                         mock_rock_block_api_send_data_out):
         test_server_option = "Mei"
         send_status = send_satellite_message("test_email", "test_info_level", "test_message_body", test_server_option)
         assert mock_cloud_loop_message_get_payload.called
-        assert mock_rock_block_api_set_up_uart.called
         assert mock_rock_block_api_send_data_out.called
         assert send_status == 'Send Success'
 
     def test_send_satellite_message_invalid_server_option(self, mock_cloud_loop_api_get_cloud_loop_auth_token,
                                                           mock_cloud_loop_api_get_rock_block_id,
                                                           mock_cloud_loop_message_get_payload,
-                                                          mock_rock_block_api_set_up_uart,
                                                           mock_rock_block_api_send_data_out):
         test_server_option = "Shichikoyama"
         send_status = send_satellite_message("test_email", "test_info_level", "test_message_body", test_server_option)
         assert not mock_cloud_loop_message_get_payload.called
-        assert not mock_rock_block_api_set_up_uart.called
         assert not mock_rock_block_api_send_data_out.called
         assert send_status == 'Incorrect Server Mode'
 
