@@ -76,7 +76,7 @@ class TestGMailAuth:
         with pytest.raises(FileNotFoundError, match=r"No such file or directory: 'credentials.json'"):
             test_gmail_auth.refresh_with_browser()
 
-    def test_get_creds_assemble_valid_http(self, mocker, tmp_path,
+    def test_get_creds_assemble_valid_http(self, mocker, tmp_path, capfd,
                                            mock_gmail_api_get_google_topic,
                                            mock_gmail_auth_google_api_refresh_access_token_local):
         tmp_cred_file = tmp_path / 'credentials.json'
@@ -91,9 +91,14 @@ class TestGMailAuth:
         mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
         test_gmail_auth = GMailAuth()
         test_gmail_auth._get_creds()
+        captured = capfd.readouterr()
         assert mock_gmail_auth_google_api_refresh_access_token_local.called
+        assert captured.out == ('Access Token File Found\n'
+                                'Getting New GMail Access Token...\n'
+                                'GMail Access Token Attained\n'
+                                f'Token Written To {tmp_token_file.as_posix()}\n')
 
-    def test_get_creds_no_token_file(self, mocker, tmp_path,
+    def test_get_creds_no_token_file(self, mocker, tmp_path, capfd,
                                      mock_gmail_api_get_google_topic,
                                      mock_gmail_auth_google_api_refresh_access_token_local):
         tmp_token_file = tmp_path / 'token.json'
@@ -101,8 +106,10 @@ class TestGMailAuth:
         test_gmail_auth = GMailAuth()
         with pytest.raises(ValueError, match=r"No Valid Refresh Token"):
             test_gmail_auth._get_creds()
+        captured = capfd.readouterr()
+        assert captured.out == 'Access Token File Not Found\n'
 
-    def test_get_creds_expired_token_file(self, mocker, tmp_path,
+    def test_get_creds_expired_token_file(self, mocker, tmp_path, capfd,
                                           mock_gmail_api_get_google_topic,
                                           mock_gmail_auth_google_api_refresh_access_token_local):
         tmp_token_file = tmp_path / 'token.json'
@@ -112,9 +119,14 @@ class TestGMailAuth:
         mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
         test_gmail_auth = GMailAuth()
         test_gmail_auth._get_creds()
+        captured = capfd.readouterr()
         assert mock_gmail_auth_google_api_refresh_access_token_local.called
+        assert captured.out == ('Access Token File Found\n'
+                                'Getting New GMail Access Token...\n'
+                                'GMail Access Token Attained\n'
+                                f'Token Written To {tmp_token_file.as_posix()}\n')
 
-    def test_get_creds_unexpired_token_file(self, mocker, tmp_path,
+    def test_get_creds_unexpired_token_file(self, mocker, tmp_path, capfd,
                                             mock_gmail_api_get_google_topic,
                                             mock_gmail_auth_google_api_refresh_access_token_local):
         tmp_token_file = tmp_path / 'token.json'
@@ -124,7 +136,9 @@ class TestGMailAuth:
         mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
         test_gmail_auth = GMailAuth()
         test_gmail_auth._get_creds()
+        captured = capfd.readouterr()
         assert not mock_gmail_auth_google_api_refresh_access_token_local.called
+        assert captured.out == 'Access Token File Found\n'
 
     def test_google_api_execute_request_error(self, mocker, capfd):
         test_api_http_request = "bogus_url"
@@ -133,9 +147,9 @@ class TestGMailAuth:
         test_http_request_resp.reason = "placeholder"
         test_gmail_auth = GMailAuth()
         mocker.patch('apis.google_api_lib.GMailAuth._google_api_execute_request_http_catch',
-                      side_effect=HttpError(resp=test_http_request_resp,
-                                            content=bytes("uh oh", "utf-8"),
-                                            uri="http://localhost"))
+                     side_effect=HttpError(resp=test_http_request_resp,
+                                           content=bytes("uh oh", "utf-8"),
+                                           uri="http://localhost"))
         test_gmail_auth._google_api_execute_request(test_api_http_request)
         captured = capfd.readouterr()
         assert captured.out == "Error response status code : 403, reason : uh oh\n"
@@ -446,7 +460,7 @@ class TestGMailApi:
                                "\r\nbut so far the new integration has not failed to deliver anything\r\n"
 
     def test__dissect_message_parts_no_parts(self, mock_gmail_api_get_message_size,
-                                                           mock_google_api_get_whitelist):
+                                             mock_google_api_get_whitelist):
         mock_gmail_api_get_message_size.return_value = '250'
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         test_message_payload = {'parts': []}
