@@ -35,8 +35,8 @@ class GMailAuth:
             'labelFilterAction': 'include',
             'topicName': self.google_topic
         }
-        response = self._google_api_re_watch(request)
-        if 'historyId' in response.json():
+        response_json = self._google_api_re_watch(request)
+        if 'historyId' in response_json:
             print("GMail Re-Watch Success")
         else:
             print("Gmail Re-Watch Failure")
@@ -73,7 +73,7 @@ class GMailAuth:
     def _google_api_re_watch(self, request):
         with build('gmail', 'v1', credentials=self.creds) as service:
             re_watch_http_request = service.users().watch(userId='me', body=request)
-            return self._google_api_execute_request(re_watch_http_request)
+            return self._google_api_execute_request(re_watch_http_request).json()
 
     @staticmethod
     def _google_api_refresh_with_browser(flow):
@@ -212,7 +212,7 @@ def gmail_auth_flow(auth_option):
         print(f"\nUpdate Python Anywhere .env file "
               f"CAMPHOR_TREE_REFRESH_TOKEN with {gmail_auth.token_file} contents")
     else:
-        print(f"Argument {auth_option} given is not valid")
+        print(f"Argument '{auth_option}' given is not valid")
         print("Valid arguments are either 're_watch' or 'refresh'")
         print("\nEnvironment Variables needed are:")
         print("GOOGLE_APPLICATION_CREDENTIALS: 'credentials.json' client credentials file path")

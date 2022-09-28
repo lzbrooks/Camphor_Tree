@@ -8,14 +8,13 @@ import pytest
 from google.oauth2.credentials import Credentials
 from googleapiclient.errors import HttpError
 
-from apis.google_api import GMailAPI, GMailAuth
+from apis.google_api import GMailAPI, GMailAuth, gmail_auth_flow
 from tests.data import bob_skipped_email, two_part_email, dummy_client_credentials, \
     dummy_expired_access_token, dummy_unexpired_access_token
 
 
 class TestGMailAuth:
-
-    def test_re_watch_assemble_valid_http(self, mocker, tmp_path,
+    def test_re_watch_assemble_valid_http(self, mocker, tmp_path, capfd,
                                           mock_gmail_api_get_google_topic,
                                           mock_gmail_auth_google_api_execute_request,
                                           mock_gmail_auth_google_api_refresh_access_token_local):
@@ -32,7 +31,32 @@ class TestGMailAuth:
         mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
         test_gmail_auth = GMailAuth()
         test_gmail_auth.re_watch()
+        captured = capfd.readouterr()
         assert mock_gmail_auth_google_api_execute_request.called
+        assert captured.out == 'Access Token File Found\nGmail Re-Watch Failure\n'
+
+    def test_re_watch_assemble_valid_response(self, mocker, tmp_path, capfd,
+                                              mock_gmail_api_get_google_topic,
+                                              mock_gmail_auth_google_api_re_watch,
+                                              mock_gmail_auth_google_api_execute_request,
+                                              mock_gmail_auth_google_api_refresh_access_token_local):
+        mock_gmail_api_get_google_topic.return_value = 'test_topic'
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        mock_gmail_auth_google_api_re_watch.return_value = {'historyId': '1512534'}
+        test_gmail_auth = GMailAuth()
+        test_gmail_auth.re_watch()
+        captured = capfd.readouterr()
+        assert mock_gmail_auth_google_api_re_watch.called
+        assert captured.out == 'Access Token File Found\nGMail Re-Watch Success\n'
 
     def test_re_watch_valid_body_made(self,
                                       mock_gmail_api_get_google_topic,
@@ -635,3 +659,122 @@ class TestGMailApi:
         message_from, message_subject = sut._dissect_message_headers(test_headers)
         assert not message_from
         assert not message_subject
+
+
+class TestGmailAuthFlow:
+    def test_gmail_auth_flow_re_watch_assemble_valid_http(self, mocker, tmp_path, capfd,
+                                                          mock_gmail_api_get_google_topic,
+                                                          mock_gmail_auth_google_api_execute_request,
+                                                          mock_gmail_auth_google_api_refresh_access_token_local):
+        mock_gmail_api_get_google_topic.return_value = 'test_topic'
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        gmail_auth_flow("re_watch")
+        captured = capfd.readouterr()
+        assert mock_gmail_auth_google_api_execute_request.called
+        assert captured.out == 'Access Token File Found\nGmail Re-Watch Failure\n'
+
+    def test_gmail_auth_flow_re_watch_assemble_valid_response(self, mocker, tmp_path, capfd,
+                                                              mock_gmail_api_get_google_topic,
+                                                              mock_gmail_auth_google_api_re_watch,
+                                                              mock_gmail_auth_google_api_execute_request,
+                                                              mock_gmail_auth_google_api_refresh_access_token_local):
+        mock_gmail_api_get_google_topic.return_value = 'test_topic'
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_unexpired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        mock_gmail_auth_google_api_re_watch.return_value = {'historyId': '1512534'}
+        gmail_auth_flow("re_watch")
+        captured = capfd.readouterr()
+        assert mock_gmail_auth_google_api_re_watch.called
+        assert captured.out == 'Access Token File Found\nGMail Re-Watch Success\n'
+
+    def test_gmail_auth_flow_re_watch_valid_body_made(self,
+                                                      mock_gmail_api_get_google_topic,
+                                                      mock_gmail_auth_google_api_re_watch,
+                                                      mock_gmail_api_get_creds_local):
+        mock_gmail_api_get_google_topic.return_value = 'test_topic'
+        gmail_auth_flow("re_watch")
+        mock_gmail_auth_google_api_re_watch.assert_called_with({
+            'labelIds': ['INBOX'],
+            'labelFilterAction': 'include',
+            'topicName': 'test_topic'
+        })
+
+    def test_gmail_auth_flow_refresh_valid_creds(self, mocker, tmp_path,
+                                                 mock_gmail_api_get_google_topic,
+                                                 mock_gmail_auth_google_api_refresh_with_browser):
+        tmp_cred_file = tmp_path / 'credentials.json'
+        tmp_token_file = tmp_path / 'token.json'
+        credentials_dict = dummy_client_credentials.credentials_dict
+        with open(tmp_cred_file, "w") as test_file_object:
+            json.dump(credentials_dict, test_file_object)
+        token_dict = dummy_expired_access_token.token_dict
+        with open(tmp_token_file, "w") as test_file_object:
+            json.dump(token_dict, test_file_object)
+        test_scopes = ['https://www.googleapis.com/auth/gmail.modify']
+        mock_gmail_auth_google_api_refresh_with_browser.return_value = \
+            Credentials.from_authorized_user_file(tmp_token_file.as_posix(), test_scopes)
+        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ACCESS_TOKEN_FILE": tmp_token_file.as_posix()})
+        mocker.patch.dict(os.environ, {"GOOGLE_APPLICATION_CREDENTIALS": tmp_cred_file.as_posix()})
+        gmail_auth_flow("refresh")
+        assert mock_gmail_auth_google_api_refresh_with_browser.called
+
+    def test_gmail_auth_flow_refresh_no_credential_file(self, tmp_path,
+                                                        mock_gmail_api_get_google_topic,
+                                                        mock_gmail_auth_google_api_execute_request,
+                                                        mock_gmail_auth_google_api_refresh_access_token_local,
+                                                        mock_gmail_auth_google_api_refresh_with_browser):
+        with pytest.raises(FileNotFoundError, match=r"No such file or directory: 'credentials.json'"):
+            gmail_auth_flow("refresh")
+
+    def test_gmail_auth_flow_invalid_option(self, tmp_path, capfd,
+                                            mock_gmail_api_get_google_topic,
+                                            mock_gmail_auth_google_api_execute_request,
+                                            mock_gmail_auth_google_api_refresh_access_token_local,
+                                            mock_gmail_auth_google_api_refresh_with_browser):
+        gmail_auth_flow("invalid")
+        captured = capfd.readouterr()
+        assert captured.out == ("Argument 'invalid' given is not valid\n"
+                                "Valid arguments are either 're_watch' or 'refresh'\n"
+                                '\n'
+                                'Environment Variables needed are:\n'
+                                "GOOGLE_APPLICATION_CREDENTIALS: 'credentials.json' client credentials file "
+                                'path\n'
+                                "CAMPHOR_TREE_ACCESS_TOKEN_FILE: 'token.json' refresh token file path\n"
+                                '\n'
+                                're_watch specific environment variable needed is:\n'
+                                'CAMPHOR_TREE_TOPIC: google pub/sub topic string\n')
+
+    def test_gmail_auth_flow_no_option(self, tmp_path, capfd,
+                                            mock_gmail_api_get_google_topic,
+                                            mock_gmail_auth_google_api_execute_request,
+                                            mock_gmail_auth_google_api_refresh_access_token_local,
+                                            mock_gmail_auth_google_api_refresh_with_browser):
+        gmail_auth_flow(None)
+        captured = capfd.readouterr()
+        assert captured.out == ("Argument 'None' given is not valid\n"
+                                "Valid arguments are either 're_watch' or 'refresh'\n"
+                                '\n'
+                                'Environment Variables needed are:\n'
+                                "GOOGLE_APPLICATION_CREDENTIALS: 'credentials.json' client credentials file "
+                                'path\n'
+                                "CAMPHOR_TREE_ACCESS_TOKEN_FILE: 'token.json' refresh token file path\n"
+                                '\n'
+                                're_watch specific environment variable needed is:\n'
+                                'CAMPHOR_TREE_TOPIC: google pub/sub topic string\n')
