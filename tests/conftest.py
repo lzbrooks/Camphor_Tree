@@ -191,42 +191,42 @@ def mock_rock_block_api_time_sleep(mocker):
 
 @pytest.fixture
 def mock_gmail_api_get_google_client_id(mocker):
-    return mocker.patch("apis.google_api_lib.Config.get_google_id")
+    return mocker.patch("apis.google_api.Config.get_google_id")
 
 
 @pytest.fixture
 def mock_gmail_api_get_google_client_secret(mocker):
-    return mocker.patch("apis.google_api_lib.Config.get_google_secret")
+    return mocker.patch("apis.google_api.Config.get_google_secret")
 
 
 @pytest.fixture
 def mock_gmail_api_get_refresh_token(mocker):
-    return mocker.patch("apis.google_api_lib.Config.get_google_refresh_token")
+    return mocker.patch("apis.google_api.Config.get_google_refresh_token")
 
 
 @pytest.fixture
 def mock_gmail_api_get_google_topic(mocker):
-    return mocker.patch("apis.google_api_lib.Config.get_google_topic")
+    return mocker.patch("apis.google_api.Config.get_google_topic")
 
 
 @pytest.fixture
 def mock_gmail_api_get_email(mocker):
-    return mocker.patch("apis.google_api_lib.Config.get_email")
+    return mocker.patch("apis.google_api.Config.get_email")
 
 
 @pytest.fixture
 def mock_gmail_api_get_message_size(mocker):
-    return mocker.patch("apis.google_api_lib.Config.get_max_message_size")
+    return mocker.patch("apis.google_api.Config.get_max_message_size")
 
 
 @pytest.fixture
 def mock_google_api_get_whitelist(mocker):
-    return mocker.patch("apis.google_api_lib.Config.get_whitelist")
+    return mocker.patch("apis.google_api.Config.get_whitelist")
 
 
 @pytest.fixture
 def mock_google_api_get_whitelist(mocker):
-    return mocker.patch("apis.google_api_lib.Config.get_whitelist")
+    return mocker.patch("apis.google_api.Config.get_whitelist")
 
 
 @pytest.fixture
@@ -275,22 +275,22 @@ def mock_gmail_auth_google_api_refresh_access_token(mocker):
 
 @pytest.fixture
 def mock_gmail_api_get_creds_local(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAPI._get_creds")
+    return mocker.patch("apis.google_api.GMailAPI._get_creds")
 
 
 @pytest.fixture
 def mock_gmail_api_dissect_message_local(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAPI._dissect_message")
+    return mocker.patch("apis.google_api.GMailAPI._dissect_message")
 
 
 @pytest.fixture
 def mock_gmail_api_google_api_execute_request(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAPI._google_api_execute_request")
+    return mocker.patch("apis.google_api.GMailAPI._google_api_execute_request")
 
 
 @pytest.fixture
 def mock_gmail_api_google_api_refresh_access_token_local(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAPI._google_api_refresh_access_token")
+    return mocker.patch("apis.google_api.GMailAPI._google_api_refresh_access_token")
 
 #
 # GMail Auth Mocks LOCAL
@@ -299,32 +299,32 @@ def mock_gmail_api_google_api_refresh_access_token_local(mocker):
 
 @pytest.fixture
 def mock_gmail_api_get_creds_local(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAuth._get_creds")
+    return mocker.patch("apis.google_api.GMailAuth._get_creds")
 
 
 @pytest.fixture
 def mock_gmail_auth_google_api_execute_request(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAuth._google_api_execute_request")
+    return mocker.patch("apis.google_api.GMailAuth._google_api_execute_request")
 
 
 @pytest.fixture
 def mock_gmail_auth_google_api_execute_request_http_catch(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAuth._google_api_execute_request_http_catch")
+    return mocker.patch("apis.google_api.GMailAuth._google_api_execute_request_http_catch")
 
 
 @pytest.fixture
 def mock_gmail_auth_google_api_re_watch(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAuth._google_api_re_watch")
+    return mocker.patch("apis.google_api.GMailAuth._google_api_re_watch")
 
 
 @pytest.fixture
 def mock_gmail_auth_google_api_refresh_with_browser(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAuth._google_api_refresh_with_browser")
+    return mocker.patch("apis.google_api.GMailAuth._google_api_refresh_with_browser")
 
 
 @pytest.fixture
 def mock_gmail_auth_google_api_refresh_access_token_local(mocker):
-    return mocker.patch("apis.google_api_lib.GMailAuth._google_api_refresh_access_token")
+    return mocker.patch("apis.google_api.GMailAuth._google_api_refresh_access_token")
 
 
 #

@@ -8,7 +8,7 @@ import pytest
 from google.oauth2.credentials import Credentials
 from googleapiclient.errors import HttpError
 
-from apis.google_api_lib import GMailAPI, GMailAuth
+from apis.google_api import GMailAPI, GMailAuth
 from tests.data import bob_skipped_email, two_part_email, dummy_client_credentials, \
     dummy_expired_access_token, dummy_unexpired_access_token
 
@@ -146,7 +146,7 @@ class TestGMailAuth:
         test_http_request_resp.status = "403"
         test_http_request_resp.reason = "placeholder"
         test_gmail_auth = GMailAuth()
-        mocker.patch('apis.google_api_lib.GMailAuth._google_api_execute_request_http_catch',
+        mocker.patch('apis.google_api.GMailAuth._google_api_execute_request_http_catch',
                      side_effect=HttpError(resp=test_http_request_resp,
                                            content=bytes("uh oh", "utf-8"),
                                            uri="http://localhost"))

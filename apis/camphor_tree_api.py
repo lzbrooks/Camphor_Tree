@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from apis.cloud_loop_api import HexEncodeForCloudLoop, DecodeCloudLoopMessage
-from apis.google_api_lib import GMailAPI
+from apis.google_api import GMailAPI
 from apis.rock_block_api import RockBlockAPI
 
 
