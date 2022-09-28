@@ -45,20 +45,6 @@ class Config:
             return whitelist
 
     @staticmethod
-    def get_google_secret(google_client_secret=None):
-        if not google_client_secret:
-            if 'CAMPHOR_TREE_SECRET' in os.environ:
-                return os.environ['CAMPHOR_TREE_SECRET']
-        return google_client_secret
-
-    @staticmethod
-    def get_google_id(google_client_id=None):
-        if not google_client_id:
-            if 'CAMPHOR_TREE_ID' in os.environ:
-                return os.environ['CAMPHOR_TREE_ID']
-        return google_client_id
-
-    @staticmethod
     def get_info_levels():
         info_levels = [('Emergency', 'Emergency'), ('Urgent', 'Urgent'), ('Info', 'Info')]
         return info_levels
@@ -76,11 +62,6 @@ class Config:
             return os.environ['CAMPHOR_TREE_ACCESS_TOKEN_FILE']
         else:
             return 'token.json'
-
-    @staticmethod
-    def get_google_refresh_token():
-        if 'CAMPHOR_TREE_REFRESH_TOKEN' in os.environ:
-            return os.environ['CAMPHOR_TREE_REFRESH_TOKEN']
 
     @staticmethod
     def get_cloud_loop_auth_token():

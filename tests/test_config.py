@@ -72,36 +72,6 @@ class TestConfig:
         config_return = Config().get_whitelist()
         assert not config_return
 
-    def test_config_get_google_secret_env_var(self, mocker):
-        google_secret = 'test_secret'
-        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_SECRET": google_secret})
-        config_return = Config().get_google_secret()
-        assert config_return == google_secret
-
-    def test_config_get_google_secret_parameter(self):
-        google_secret = 'test_secret'
-        config_return = Config().get_google_secret(google_secret)
-        assert config_return == google_secret
-
-    def test_config_get_google_secret_default(self):
-        config_return = Config().get_google_secret()
-        assert not config_return
-
-    def test_config_get_google_id_env_var(self, mocker):
-        google_id = 'test_id'
-        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_ID": google_id})
-        config_return = Config().get_google_id()
-        assert config_return == google_id
-
-    def test_config_get_google_id_parameter(self):
-        google_id = 'test_id'
-        config_return = Config().get_google_id(google_id)
-        assert config_return == google_id
-
-    def test_config_get_google_id_default(self):
-        config_return = Config().get_google_id()
-        assert not config_return
-
     def test_config_get_info_levels(self):
         config_return = Config().get_info_levels()
         assert config_return == [('Emergency', 'Emergency'), ('Urgent', 'Urgent'), ('Info', 'Info')]
@@ -125,16 +95,6 @@ class TestConfig:
     def test_config_get_google_access_token_file_default(self):
         config_return = Config().get_google_access_token_file()
         assert config_return == 'token.json'
-
-    def test_config_get_google_refresh_token_env_var(self, mocker):
-        google_refresh_token = 'test_refresh_token'
-        mocker.patch.dict(os.environ, {"CAMPHOR_TREE_REFRESH_TOKEN": google_refresh_token})
-        config_return = Config().get_google_refresh_token()
-        assert config_return == google_refresh_token
-
-    def test_config_get_google_refresh_token_default(self):
-        config_return = Config().get_google_refresh_token()
-        assert not config_return
 
     def test_config_get_cloud_loop_auth_token_env_var(self, mocker):
         google_auth_token = 'test_auth_token'
