@@ -754,6 +754,25 @@ class TestGmailAuthFlow:
                            match=f"No such file or directory: '{tmp_invalid_cred_file.as_posix()}'"):
             gmail_auth_flow(["./gmail_auth_flow.py", "refresh"])
 
+    # TODO: stub test
+    def test_gmail_auth_flow_refresh_error_response(self):
+        test_case = """
+                    Access Token File Found
+                    Error response status code : 400, reason : [{'message': 'Invalid topicName does not match projects/camphor-tree-server/topics/*', 'domain': 'global', 'reason': 'invalidArgument'}]
+                    Traceback (most recent call last):
+                    File "/home/satsuki/Camphor_Tree/gmail_auth_flow.py", line 40, in <module>
+                    gmail_auth_flow(sys.argv)
+                    File "/home/satsuki/Camphor_Tree/gmail_auth_flow.py", line 12, in gmail_auth_flow
+                    gmail_auth.re_watch()
+                    File "/home/satsuki/Camphor_Tree/apis/google_api.py", line 37, in re_watch
+                    response_json = self._google_api_re_watch(request)
+                    File "/home/satsuki/Camphor_Tree/apis/google_api.py", line 75, in _google_api_re_watch
+                    return self._google_api_execute_request(re_watch_http_request).json()
+                    AttributeError: 'NoneType' object has no attribute 'json' 
+                    """
+        print(test_case)
+        pass
+
     def test_gmail_auth_flow_invalid_option(self, tmp_path, capfd,
                                             mock_gmail_api_get_google_topic,
                                             mock_gmail_auth_google_api_execute_request,

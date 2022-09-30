@@ -72,7 +72,7 @@ class GMailAuth:
     def _google_api_re_watch(self, request):
         with build('gmail', 'v1', credentials=self.creds) as service:
             re_watch_http_request = service.users().watch(userId='me', body=request)
-            return self._google_api_execute_request(re_watch_http_request).json()
+            return self._google_api_execute_request(re_watch_http_request)
 
     @staticmethod
     def _google_api_refresh_with_browser(flow):
