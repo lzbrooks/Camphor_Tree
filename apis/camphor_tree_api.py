@@ -33,12 +33,12 @@ def relay_cloud_loop_message_to_email(request_json_data):
     print("POST GMail Message Handled")
 
 
-def get_latest_gmail_message_text():
+def get_latest_gmail_message_parts():
     print("POST GMail Ping Received")
     message_for_cloud_loop = GMailAPI()
     message = message_for_cloud_loop.get_top_inbox_message()
-    _, _, message_text = message_for_cloud_loop.get_gmail_message_by_id(message)
-    return message_text
+    message_from, message_subject, message_text = message_for_cloud_loop.get_gmail_message_by_id(message)
+    return message_from, message_subject, message_text
 
 
 def message_text_is_new(message_text, message_file_name="last_gmail_message.json"):
@@ -69,10 +69,7 @@ def write_gmail_message_to_file(gmail_message_json, message_file_path):
         json.dump(gmail_message_json, file_object)
 
 
-def relay_email_message_to_cloud_loop():
-    message_for_cloud_loop = GMailAPI()
-    message = message_for_cloud_loop.get_top_inbox_message()
-    message_from, message_subject, message_text = message_for_cloud_loop.get_gmail_message_by_id(message)
+def relay_email_message_to_cloud_loop(message_from, message_subject, message_text):
     message_to_cloud_loop = HexEncodeForCloudLoop(message_from=message_from,
                                                   message_subject=message_subject,
                                                   message_to_encode=message_text)

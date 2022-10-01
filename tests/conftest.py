@@ -43,8 +43,8 @@ def mock_relay_email_message_to_cloud_loop(mocker):
 
 
 @pytest.fixture
-def mock_get_latest_gmail_message_text(mocker):
-    return mocker.patch("app.get_latest_gmail_message_text")
+def mock_get_latest_gmail_message_parts(mocker):
+    return mocker.patch("app.get_latest_gmail_message_parts")
 
 
 @pytest.fixture

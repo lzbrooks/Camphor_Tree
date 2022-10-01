@@ -129,10 +129,11 @@ class TestAppConsoleFlow:
 
     def test_relay_valid_sub_email_ping(self, client,
                                         mock_get_google_sub,
-                                        mock_get_latest_gmail_message_text,
+                                        mock_get_latest_gmail_message_parts,
                                         mock_message_text_is_new,
                                         mock_relay_email_message_to_cloud_loop):
         mock_get_google_sub.return_value = "test_sub"
+        mock_get_latest_gmail_message_parts.return_value = ("test_sender", "#fbc84a (2/2)", "Testing")
         mock_message_text_is_new.return_value = True
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
@@ -143,11 +144,12 @@ class TestAppConsoleFlow:
 
     def test_relay_valid_sub_email_ping_no_relay(self, client,
                                                  mock_get_google_sub,
-                                                 mock_get_latest_gmail_message_text,
+                                                 mock_get_latest_gmail_message_parts,
                                                  mock_message_text_is_new,
                                                  mock_get_relay_switch,
                                                  mock_relay_email_message_to_cloud_loop):
         mock_get_google_sub.return_value = "test_sub"
+        mock_get_latest_gmail_message_parts.return_value = ("test_sender", "#fbc84a (2/2)", "Testing")
         mock_message_text_is_new.return_value = True
         mock_get_relay_switch.return_value = False
         response = client.post('/', json={"subscription": "test_sub",
@@ -159,10 +161,11 @@ class TestAppConsoleFlow:
 
     def test_bounce_duplicate_sub_email_ping(self, client,
                                              mock_get_google_sub,
-                                             mock_get_latest_gmail_message_text,
+                                             mock_get_latest_gmail_message_parts,
                                              mock_message_text_is_new,
                                              mock_relay_email_message_to_cloud_loop):
         mock_get_google_sub.return_value = "test_sub"
+        mock_get_latest_gmail_message_parts.return_value = ("test_sender", "#fbc84a (2/2)", "Testing")
         mock_message_text_is_new.return_value = False
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":

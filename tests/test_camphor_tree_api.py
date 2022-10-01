@@ -1,9 +1,7 @@
 import json
 
-import pytest
-
 from apis.camphor_tree_api import send_satellite_message, relay_email_message_to_cloud_loop, \
-    relay_cloud_loop_message_to_email, get_latest_gmail_message_text, message_text_is_new, \
+    relay_cloud_loop_message_to_email, get_latest_gmail_message_parts, message_text_is_new, \
     read_gmail_message_from_file, save_gmail_message_to_file
 
 
@@ -40,19 +38,19 @@ class TestCamphorTreeApi:
         assert not mock_rock_block_api_send_data_out.called
         assert send_status == 'Incorrect Server Mode'
 
-    def test_relay_email_message_to_cloud_loop_no_message(self, mock_gmail_api_get_message_size,
+    def test_relay_email_message_to_cloud_loop_no_message(self, capfd,
                                                           mock_gmail_api_google_api_get_top_inbox_message,
                                                           mock_gmail_api_google_api_get_message,
                                                           mock_gmail_api_get_creds,
                                                           mock_cloud_loop_api_get_cloud_loop_auth_token,
                                                           mock_cloud_loop_api_get_rock_block_id,
-                                                          mock_cloud_loop_message_send_cloud_loop_message):
-        with pytest.raises(TypeError, match=r"'NoneType' object is not subscriptable"):
-            relay_email_message_to_cloud_loop()
-        assert mock_gmail_api_get_message_size.called
-        assert not mock_cloud_loop_api_get_cloud_loop_auth_token.called
-        assert not mock_cloud_loop_api_get_rock_block_id.called
-        assert not mock_cloud_loop_message_send_cloud_loop_message.called
+                                                          mock_cloud_loop_api_requests_get):
+        relay_email_message_to_cloud_loop(None, None, None)
+        captured = capfd.readouterr()
+        assert captured.out == 'No CloudLoop Message to Send\nPOST CloudLoop Message Handled\n'
+        assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert mock_cloud_loop_api_get_rock_block_id.called
+        assert not mock_cloud_loop_api_requests_get.called
 
     def test_relay_email_message_to_cloud_loop_one_message(self, mock_gmail_api_get_message_size,
                                                            mock_gmail_get_top_inbox_message,
@@ -61,9 +59,7 @@ class TestCamphorTreeApi:
                                                            mock_cloud_loop_api_get_rock_block_id,
                                                            mock_cloud_loop_message_send_cloud_loop_message):
         mock_gmail_get_top_inbox_message.return_value = "test_message"
-        mock_gmail_api_get_gmail_message_by_id.return_value = ("message_from", "message_subject", "message_text")
-
-        relay_email_message_to_cloud_loop()
+        relay_email_message_to_cloud_loop("test_sender", "#fbc84a (2/2)", "Testing")
         assert mock_gmail_api_get_message_size.called
         assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
         assert mock_cloud_loop_api_get_rock_block_id.called
@@ -92,11 +88,13 @@ class TestCamphorTreeApi:
         mock_gmail_api_get_gmail_message_by_id.return_value = "test_message_from", \
                                                               "test_message_subject", \
                                                               "test_message_text"
-        message_text = get_latest_gmail_message_text()
+        message_from, message_subject, message_text = get_latest_gmail_message_parts()
         assert mock_gmail_api_get_message_size.called
         assert mock_gmail_get_top_inbox_message.called
         assert mock_gmail_api_get_gmail_message_by_id.called
-        assert message_text == "test_message_text"
+        assert message_from == 'test_message_from'
+        assert message_subject == 'test_message_subject'
+        assert message_text == 'test_message_text'
 
     def test_message_text_is_new_true(self, mock_read_gmail_message_from_file, mock_save_gmail_message_to_file):
         test_message_text = "test message body"
