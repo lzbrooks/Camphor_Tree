@@ -151,6 +151,8 @@ class GMailAPI(GMailAuth):
         _logger.info(f"Dissecting message:\n{message_payload}")
         message_from, message_subject = self._dissect_message_headers(message_payload)
         message_text = self._dissect_message_parts(message_from, message_payload)
+        print(f"Message Subject: {message_subject}")
+        print(f"Message Body: {message_text}")
         print("GMail Message Dissected")
         return message_from, message_subject, message_text
 
@@ -176,9 +178,9 @@ class GMailAPI(GMailAuth):
                     and 'data' in message_part['body']:
                 size_in_bytes = message_part['body']['size']
                 print("Inspecting Message Size")
-                print("Max Message Size Allowed: " + str(self.max_message_size))
-                print("Current Message Size: " + str(size_in_bytes))
-                print("Message From: " + message_from)
+                print(f"Max Message Size Allowed: {self.max_message_size}")
+                print(f"Current Message Size: {size_in_bytes}")
+                print(f"Message From: {message_from}")
                 if size_in_bytes < self.max_message_size:
                     print("Valid: Message Under Max Size")
                     message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
