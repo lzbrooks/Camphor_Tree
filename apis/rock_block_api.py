@@ -26,7 +26,6 @@ class RockBlockAPI:
             self._set_data_out(message.encode())
             self._talk_to_rock_block()
 
-    # TODO: test
     def check_mailbox(self):
         self._talk_to_rock_block()
         self._process_rock_block_status()
@@ -76,8 +75,3 @@ class RockBlockAPI:
 
     def _get_satellite_transfer(self):
         return self.rock_block.satellite_transfer()  # pragma: no cover
-
-
-if __name__ == "__main__":  # pragma: no cover
-    rock_block_ping = RockBlockAPI()
-    rock_block_ping.check_mailbox()
