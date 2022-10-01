@@ -34,6 +34,7 @@ def relay_cloud_loop_message_to_email(request_json_data):
 
 
 def get_latest_gmail_message_text():
+    print("POST GMail Ping Received")
     message_for_cloud_loop = GMailAPI()
     message = message_for_cloud_loop.get_top_inbox_message()
     _, _, message_text = message_for_cloud_loop.get_gmail_message_by_id(message)
@@ -44,6 +45,7 @@ def message_text_is_new(message_text, message_file_name="last_gmail_message.json
     last_gmail_message_text = read_gmail_message_from_file(message_file_name)
     if message_text != last_gmail_message_text:
         save_gmail_message_to_file(message_file_name, message_text)
+        print("New GMail Message Detected")
         return True
     else:
         print("Bounce This One")

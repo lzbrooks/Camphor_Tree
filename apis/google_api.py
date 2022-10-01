@@ -107,6 +107,7 @@ class GMailAPI(GMailAuth):
         self._get_creds()
         top_message = self._google_api_get_top_inbox_message()
         if 'messages' in top_message:
+            print("Top Inbox GMail Activity Attained")
             return top_message['messages'][0]
 
     def get_gmail_message_by_id(self, message):
@@ -179,9 +180,11 @@ class GMailAPI(GMailAuth):
                 print("Current Message Size: " + str(size_in_bytes))
                 print("Message From: " + message_from)
                 if size_in_bytes < self.max_message_size:
+                    print("Valid: Message Under Max Size")
                     message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
                 if size_in_bytes > self.max_message_size \
                         and message_from in Config.get_whitelist().values():
+                    print("Valid: Message In Whitelist And Over Max Size")
                     message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
         return message_text
 
