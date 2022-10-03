@@ -2,7 +2,7 @@ import json
 
 from apis.camphor_tree_api import send_satellite_message, relay_email_message_to_cloud_loop, \
     relay_cloud_loop_message_to_email, get_latest_gmail_message_parts, message_text_is_new, \
-    read_gmail_message_from_file, save_gmail_message_to_file
+    save_gmail_message_to_file, read_message_from_file
 
 
 class TestCamphorTreeApi:
@@ -96,22 +96,23 @@ class TestCamphorTreeApi:
         assert message_subject == 'test_message_subject'
         assert message_text == 'test_message_text'
 
-    def test_message_text_is_new_true(self, mock_read_gmail_message_from_file, mock_save_gmail_message_to_file):
+    def test_message_text_is_new_true(self, mock_read_message_from_file, mock_save_gmail_message_to_file):
         test_message_text = "test message body"
-        mock_read_gmail_message_from_file.return_value = "old message body"
+        mock_read_message_from_file.return_value = {"last_gmail_message": "old message body"}
         message_new = message_text_is_new(test_message_text)
         assert message_new
 
-    def test_message_text_is_new_true_empty(self, mock_read_gmail_message_from_file, mock_save_gmail_message_to_file):
+    def test_message_text_is_new_true_empty(self, mock_read_message_from_file, mock_save_gmail_message_to_file):
         test_message_text = "test message body"
-        mock_read_gmail_message_from_file.return_value = None
+        mock_read_message_from_file.return_value = None
+        mock_read_message_from_file.return_value = {"last_gmail_message": "not_duplicate"}
         message_new = message_text_is_new(test_message_text)
         assert message_new
 
     def test_message_text_is_new_false_no_diff(self,
-                                               mock_read_gmail_message_from_file, mock_save_gmail_message_to_file):
+                                               mock_read_message_from_file, mock_save_gmail_message_to_file):
         test_message_text = "test message body"
-        mock_read_gmail_message_from_file.return_value = test_message_text
+        mock_read_message_from_file.return_value = {"last_gmail_message": test_message_text}
         message_new = message_text_is_new(test_message_text)
         assert not message_new
 
@@ -121,8 +122,8 @@ class TestCamphorTreeApi:
         test_message_file_path = tmp_path / test_message_file_name
         with open(test_message_file_path, "w") as test_message_file_object:
             json.dump(test_gmail_message_dict, test_message_file_object)
-        return_json = read_gmail_message_from_file(test_message_file_path)
-        assert return_json == test_gmail_message_dict["last_gmail_message"]
+        return_json = read_message_from_file(test_message_file_path)
+        assert return_json == {'last_gmail_message': test_gmail_message_dict["last_gmail_message"]}
 
     def test_save_gmail_message_to_file(self, tmp_path):
         test_message_text = "message body text"

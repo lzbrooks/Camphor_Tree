@@ -68,8 +68,8 @@ def mock_get_relay_switch(mocker):
 
 
 @pytest.fixture
-def mock_read_gmail_message_from_file(mocker):
-    return mocker.patch("apis.camphor_tree_api.read_gmail_message_from_file")
+def mock_read_message_from_file(mocker):
+    return mocker.patch("apis.camphor_tree_api.read_message_from_file")
 
 
 @pytest.fixture
@@ -78,8 +78,8 @@ def mock_save_gmail_message_to_file(mocker):
 
 
 @pytest.fixture
-def mock_write_gmail_message_to_file(mocker):
-    return mocker.patch("apis.camphor_tree_api.write_gmail_message_to_file")
+def mock_write_message_to_file(mocker):
+    return mocker.patch("apis.camphor_tree_api.write_message_to_file")
 
 #
 # Cloud Loop API Mocks
@@ -140,6 +140,7 @@ def mock_cloud_loop_api_get_cloud_loop_payload_url(mocker):
 def mock_cloud_loop_api_requests_get(mocker):
     return mocker.patch("apis.cloud_loop_api.requests.get")
 
+
 #
 # Rock Block API Mocks
 #
@@ -176,8 +177,13 @@ def mock_rock_block_api_get_data_in(mocker):
 
 
 @pytest.fixture
-def mock_rock_block_api_assemble_message_file_name(mocker):
-    return mocker.patch("apis.rock_block_api.RockBlockAPI._assemble_message_file_name")
+def mock_rock_block_api__assemble_complete_message_file_path(mocker):
+    return mocker.patch("apis.rock_block_api.CheckMail._assemble_complete_message_file_path")
+
+
+@pytest.fixture
+def mock_rock_block_api__assemble_collating_message_file_path(mocker):
+    return mocker.patch("apis.rock_block_api.CheckMail._assemble_collating_message_file_path")
 
 
 @pytest.fixture

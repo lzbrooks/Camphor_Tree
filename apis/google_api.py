@@ -94,7 +94,7 @@ class GMailAuth:
 
 class GMailAPI(GMailAuth):
     def __init__(self, message_to=None, message_from=None, message_subject=None, message_text=None):
-        GMailAuth.__init__(self)
+        super().__init__()
         self.max_message_size = Config.get_max_message_size()
         self.message_to = message_to
         self.message_from = Config.get_email(message_from)

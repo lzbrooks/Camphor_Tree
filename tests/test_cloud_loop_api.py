@@ -595,6 +595,28 @@ class TestDecodeCloudLoopMessage:
         assert test_cloud_loop.decoded_message == test_string
         assert not test_cloud_loop.message_subject
 
+    # TODO: testing
+    def test__split_message_subject_valid_subject(self):
+        test_cloud_loop = DecodeCloudLoopMessage(message_subject="#fbc84a (1/2)")
+        test_cloud_loop._split_message_subject()
+        assert test_cloud_loop.message_hash_id == '#fbc84a'
+        assert test_cloud_loop.message_part_number == '1'
+        assert test_cloud_loop.parts_total == '2'
+
+    def test__split_message_subject_invalid_subject(self):
+        test_cloud_loop = DecodeCloudLoopMessage(message_subject="Testing")
+        test_cloud_loop._split_message_subject()
+        assert not test_cloud_loop.message_hash_id
+        assert not test_cloud_loop.message_part_number
+        assert not test_cloud_loop.parts_total
+
+    def test__split_message_subject_no_subject(self):
+        test_cloud_loop = DecodeCloudLoopMessage(message_subject=None)
+        test_cloud_loop._split_message_subject()
+        assert not test_cloud_loop.message_hash_id
+        assert not test_cloud_loop.message_part_number
+        assert not test_cloud_loop.parts_total
+
     def test__split_on_subject_not_whitelisted(self):
         test_string = "test_sender@gmail.com,#fbc84a (2/2),Testing payload"
         test_hex_string = test_string.encode().hex()

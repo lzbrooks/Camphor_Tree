@@ -104,13 +104,16 @@ class HexEncodeForCloudLoop:
 
 
 class DecodeCloudLoopMessage:
-    def __init__(self, hex_message=None):
+    def __init__(self, hex_message=None, message_subject=None):
         self.contacts = Config.get_whitelist()
         self.hex_message = hex_message
         self.decoded_message = None
         self._message_text_list = []
         self.recipient_list = []
-        self.message_subject = None
+        self.message_subject = message_subject
+        self.message_hash_id = None
+        self.message_part_number = None
+        self.parts_total = None
         self.message_text = None
 
     def decode_hex_message(self):
@@ -129,6 +132,7 @@ class DecodeCloudLoopMessage:
     def _extract_all_message_parts(self):
         message_parts = self.decoded_message.split(",")
         self._extract_message_subject(message_parts)
+        self._split_message_subject()
         self._split_on_subject(message_parts)
         self._assemble_message_recipient_list()
         self.message_text = "".join(self._message_text_list)
@@ -140,6 +144,16 @@ class DecodeCloudLoopMessage:
         message_subjects = [subject for subject in message_parts if re.search(r'#[a-fA-F\d]{6}', subject)]
         if message_subjects:
             self.message_subject = message_subjects[0]
+
+    # TODO: test
+    def _split_message_subject(self):
+        hash_id_and_parts = []
+        if self.message_subject:
+            hash_id_and_parts = re.findall(r"(#[a-fA-F\d]{6}) \((\d)/(\d)", self.message_subject)
+        if hash_id_and_parts:
+            self.message_hash_id = hash_id_and_parts[0][0]
+            self.message_part_number = hash_id_and_parts[0][1]
+            self.parts_total = hash_id_and_parts[0][2]
 
     def _split_on_subject(self, message_parts):
         if self.message_subject:
