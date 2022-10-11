@@ -795,18 +795,3 @@ class TestDecodeCloudLoopMessage:
         test_cloud_loop = DecodeCloudLoopMessage()
         returned_email_list = test_cloud_loop._contact_number_to_email(test_emails)
         assert returned_email_list == []
-
-    def test__get_email_for_contact_number_whitelisted(self, mock_cloud_loop_message_get_whitelist):
-        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
-                                                              "1": "test_sender_2@gmail.com"}
-        test_email = "0"
-        test_cloud_loop = DecodeCloudLoopMessage()
-        returned_email = test_cloud_loop._get_email_for_contact_number(test_email)
-        assert returned_email == "test_sender_1@gmail.com"
-
-    def test__get_email_for_contact_number_no_contact(self, mock_cloud_loop_message_get_whitelist):
-        mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
-                                                              "1": "test_sender_2@gmail.com"}
-        test_cloud_loop = DecodeCloudLoopMessage()
-        returned_email = test_cloud_loop._get_email_for_contact_number(None)
-        assert not returned_email

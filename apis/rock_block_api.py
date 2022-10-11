@@ -1,5 +1,6 @@
 import time
 from datetime import datetime
+from typing import List, Tuple
 
 import serial
 from adafruit_rockblock import RockBlock
@@ -21,17 +22,17 @@ class RockBlockAPI:
         self.status_of_mailbox = status_of_mailbox
         print("RockBLOCK Processed")
 
-    def send_data_out(self, data):
+    def send_data_out(self, data: List[str]) -> None:
         for message in data:
             self._set_data_out(message.encode())
             self._talk_to_rock_block()
 
-    def check_mailbox(self):
+    def check_mailbox(self) -> None:
         self._talk_to_rock_block()
         self._process_rock_block_status()
         self._save_rock_block_hex_data_to_file()
 
-    def _talk_to_rock_block(self):
+    def _talk_to_rock_block(self) -> None:
         print("Talking to satellite...")
         self.status_of_mailbox = self._get_satellite_transfer()
         print(self.status_of_mailbox)
@@ -41,7 +42,7 @@ class RockBlockAPI:
             print(self.status_of_mailbox)
         print("\nDONE.")
 
-    def _process_rock_block_status(self):
+    def _process_rock_block_status(self) -> None:
         print(self.status_of_mailbox)
         if self.status_of_mailbox[2] == 0:
             print("No Messages Waiting")
@@ -50,7 +51,7 @@ class RockBlockAPI:
         print("Size in bytes of message: " + str(self.status_of_mailbox[4]))
         print("Number of Messages in Queue: " + str(self.status_of_mailbox[5]))
 
-    def _save_rock_block_hex_data_to_file(self):
+    def _save_rock_block_hex_data_to_file(self) -> None:
         hex_data = self._get_data_in()
         print(hex_data)
         if hex_data:
@@ -64,14 +65,14 @@ class RockBlockAPI:
             print("Message Witten To: " + message_file_name)
 
     @staticmethod
-    def _assemble_message_file_name():
+    def _assemble_message_file_name() -> str:
         return "Inbox/" + datetime.now().strftime("%Y_%m_%d__%H_%M_%S") + ".txt"
 
-    def _set_data_out(self, data):
+    def _set_data_out(self, data: bytes) -> None:
         self.rock_block.data_out = data  # pragma: no cover
 
-    def _get_data_in(self):
+    def _get_data_in(self) -> List[bytes]:
         return self.rock_block.data_in  # pragma: no cover
 
-    def _get_satellite_transfer(self):
+    def _get_satellite_transfer(self) -> Tuple[int]:
         return self.rock_block.satellite_transfer()  # pragma: no cover

@@ -225,11 +225,6 @@ def mock_google_api_get_whitelist(mocker):
 
 
 @pytest.fixture
-def mock_google_api_get_whitelist(mocker):
-    return mocker.patch("apis.google_api.Config.get_whitelist")
-
-
-@pytest.fixture
 def mock_gmail_get_top_inbox_message(mocker):
     return mocker.patch("apis.camphor_tree_api.GMailAPI.get_top_inbox_message")
 
@@ -271,11 +266,6 @@ def mock_gmail_auth_google_api_refresh_access_token(mocker):
 #
 # GMail API Mocks LOCAL
 #
-
-
-@pytest.fixture
-def mock_gmail_api_get_creds_local(mocker):
-    return mocker.patch("apis.google_api.GMailAPI._get_creds")
 
 
 @pytest.fixture
