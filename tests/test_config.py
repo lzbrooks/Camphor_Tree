@@ -147,11 +147,11 @@ class TestConfig:
         assert not config_return
 
     def test_config_get_max_message_size_env_var(self, mocker):
-        max_message_size = '250'
+        max_message_size = '300'
         mocker.patch.dict(os.environ, {"CAMPHOR_TREE_MAX_SIZE": max_message_size})
         config_return = Config().get_max_message_size()
         assert config_return == int(max_message_size)
 
     def test_config_get_max_message_size_default(self):
         config_return = Config().get_max_message_size()
-        assert not config_return
+        assert config_return == 250
