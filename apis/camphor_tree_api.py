@@ -1,12 +1,13 @@
 import json
 from pathlib import Path
+from typing import Optional, Tuple, Dict
 
 from apis.cloud_loop_api import HexEncodeForCloudLoop, DecodeCloudLoopMessage
 from apis.google_api import GMailAPI
 from apis.rock_block_api import RockBlockAPI
 
 
-def send_satellite_message(email, info_level, message_body, server_option):
+def send_satellite_message(email: str, info_level: str, message_body: str, server_option: str) -> str:
     rock_block_message = HexEncodeForCloudLoop(message_from=email,
                                                message_subject=info_level,
                                                message_to_encode=message_body)
@@ -22,7 +23,7 @@ def send_satellite_message(email, info_level, message_body, server_option):
     return send_status
 
 
-def relay_cloud_loop_message_to_email(request_json_data):
+def relay_cloud_loop_message_to_email(request_json_data: str) -> None:
     print("POST CloudLoop Ping Received")
     message_from_cloud_loop = DecodeCloudLoopMessage(hex_message=request_json_data)
     message_from_cloud_loop.decode_hex_message()
@@ -33,7 +34,7 @@ def relay_cloud_loop_message_to_email(request_json_data):
     print("POST GMail Message Handled")
 
 
-def get_latest_gmail_message_parts():
+def get_latest_gmail_message_parts() -> Tuple[Optional[str], Optional[str], Optional[str]]:
     print("POST GMail Ping Received")
     message_for_cloud_loop = GMailAPI()
     message = message_for_cloud_loop.get_top_inbox_message()
@@ -41,7 +42,7 @@ def get_latest_gmail_message_parts():
     return message_from, message_subject, message_text
 
 
-def message_text_is_new(message_text, message_file_name="last_gmail_message.json"):
+def message_text_is_new(message_text: str, message_file_name: str = "last_gmail_message.json") -> bool:
     last_gmail_message_text = read_gmail_message_from_file(message_file_name)
     if message_text != last_gmail_message_text:
         save_gmail_message_to_file(message_file_name, message_text)
@@ -52,24 +53,24 @@ def message_text_is_new(message_text, message_file_name="last_gmail_message.json
         return False
 
 
-def read_gmail_message_from_file(message_file_path):
+def read_gmail_message_from_file(message_file_path: str) -> str:
     if Path(message_file_path).is_file():
         with open(message_file_path, 'r') as last_gmail_message_file:
             return json.load(last_gmail_message_file)["last_gmail_message"]
 
 
-def save_gmail_message_to_file(message_file_path, message_text):
+def save_gmail_message_to_file(message_file_path: str, message_text: str) -> None:
     gmail_message_json = {"last_gmail_message": message_text}
     write_gmail_message_to_file(gmail_message_json, message_file_path)
     print("Saved GMail Message to " + str(message_file_path))
 
 
-def write_gmail_message_to_file(gmail_message_json, message_file_path):
+def write_gmail_message_to_file(gmail_message_json: Dict[str, str], message_file_path: str) -> None:
     with open(message_file_path, "w") as file_object:
         json.dump(gmail_message_json, file_object)
 
 
-def relay_email_message_to_cloud_loop(message_from, message_subject, message_text):
+def relay_email_message_to_cloud_loop(message_from: str, message_subject: str, message_text: str) -> None:
     message_to_cloud_loop = HexEncodeForCloudLoop(message_from=message_from,
                                                   message_subject=message_subject,
                                                   message_to_encode=message_text)
