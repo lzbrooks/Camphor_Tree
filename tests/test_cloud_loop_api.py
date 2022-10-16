@@ -467,8 +467,7 @@ class TestDecodeCloudLoopMessage:
 
     def test_decode_hex_message_no_message(self):
         test_cloud_loop = DecodeCloudLoopMessage()
-        with pytest.raises(TypeError, match=r"fromhex\(\) argument must be str, not None"):
-            test_cloud_loop.decode_hex_message()
+        test_cloud_loop.decode_hex_message()
         assert not test_cloud_loop.recipient_list
         assert not test_cloud_loop.message_subject
         assert not test_cloud_loop.message_text
@@ -491,8 +490,7 @@ class TestDecodeCloudLoopMessage:
 
     def test__decode_message_from_hex_no_message(self):
         test_cloud_loop = DecodeCloudLoopMessage()
-        with pytest.raises(TypeError, match=r"fromhex\(\) argument must be str, not None"):
-            test_cloud_loop._decode_message_from_hex()
+        test_cloud_loop._decode_message_from_hex()
         assert not test_cloud_loop.decoded_message
 
     def test__extract_all_message_parts_not_whitelisted(self, capfd):
@@ -548,8 +546,7 @@ class TestDecodeCloudLoopMessage:
         mock_cloud_loop_message_get_whitelist.return_value = {"0": "test_sender_1@gmail.com",
                                                               "1": "test_sender_2@gmail.com"}
         test_cloud_loop = DecodeCloudLoopMessage()
-        with pytest.raises(AttributeError, match=r"'NoneType' object has no attribute 'split'"):
-            test_cloud_loop._extract_all_message_parts()
+        test_cloud_loop._extract_all_message_parts()
         captured = capfd.readouterr()
         assert not captured.out
         assert not test_cloud_loop.decoded_message

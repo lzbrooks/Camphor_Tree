@@ -1,7 +1,7 @@
 import random
 import re
 import requests
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 from config.config import Config
 
@@ -117,7 +117,7 @@ class HexEncodeForCloudLoop:
 
 class DecodeCloudLoopMessage:
     contacts: Optional[Dict[str, str]]
-    hex_message: Optional[bytes]
+    hex_message: Optional[Union[bytes, str]]
     decoded_message: Optional[str]
     _message_text_list: List[str]
     recipient_list: List[str]
@@ -133,28 +133,36 @@ class DecodeCloudLoopMessage:
         self.message_subject = None
         self.message_text = None
 
+    # TODO: pull out hex_message to parameter
+    # TODO: return decoded message
     def decode_hex_message(self) -> None:
         print("Hex Message Processing...")
         self._decode_message_from_hex()
         self._extract_all_message_parts()
         print("Hex Message Processed")
 
+    # TODO: pull out hex_message to parameter
+    # TODO: return decoded_message
     def _decode_message_from_hex(self) -> None:
-        # From JSON payload hex string to bytes
-        if not isinstance(self.hex_message, bytes):
-            print("Changing Hex to Bytes")
-            self.hex_message = bytes.fromhex(self.hex_message)
-        self.decoded_message = self.hex_message.decode()
+        if self.hex_message:
+            # From JSON payload hex string to bytes
+            if not isinstance(self.hex_message, bytes):
+                print("Changing Hex to Bytes")
+                self.hex_message = bytes.fromhex(self.hex_message)
+            self.decoded_message = self.hex_message.decode()
 
+    # TODO: pull out decoded_message to parameter
+    # TODO: return message parts
     def _extract_all_message_parts(self) -> None:
-        message_parts = self.decoded_message.split(",")
-        self._extract_message_subject(message_parts)
-        self._split_on_subject(message_parts)
-        self._assemble_message_recipient_list()
-        self.message_text = "".join(self._message_text_list)
-        print(self.recipient_list)
-        print(self.message_subject)
-        print(self.message_text)
+        if self.decoded_message:
+            message_parts = self.decoded_message.split(",")
+            self._extract_message_subject(message_parts)
+            self._split_on_subject(message_parts)
+            self._assemble_message_recipient_list()
+            self.message_text = "".join(self._message_text_list)
+            print(self.recipient_list)
+            print(self.message_subject)
+            print(self.message_text)
 
     def _extract_message_subject(self, message_parts: Optional[List[str]]) -> None:
         message_subjects = [subject for subject in message_parts if re.search(r'#[a-fA-F\d]{6}', subject)]
