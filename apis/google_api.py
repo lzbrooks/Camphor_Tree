@@ -5,6 +5,7 @@ import os.path
 import re
 import base64
 from email.message import EmailMessage
+from pprint import pprint
 from typing import Tuple, Optional, Dict, Any, List
 import logging
 # from logging import handlers
@@ -48,6 +49,8 @@ _logger = logging.Logger(__name__)
 #   logger.exception('Unhandled Exception')
 
 
+# TODO: refactor class variables into more local ones where applicable
+# TODO: handle possible Nones from Env Vars
 class GMailAuth:
     creds: Optional[Credentials]
     cred_file: str
@@ -219,11 +222,9 @@ class GMailAPI(GMailAuth):
 
     def _dissect_message_parts(self, message_from: str, message_payload: Dict[str, Any]) -> Optional[str]:
         message_text = None
-        print("Message Payload:")
-        print(message_payload)
         message_parts = message_payload.get('parts', [message_payload])
         print("Message Parts:")
-        print(message_parts)
+        pprint(message_parts)
         for message_part in message_parts:
             if 'mimeType' in message_part and message_part['mimeType'] == 'text/plain' \
                     and 'size' in message_part['body'] \

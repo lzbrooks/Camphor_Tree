@@ -92,7 +92,6 @@ class TestGMailAuth:
         test_gmail_auth.refresh_with_browser()
         assert mock_gmail_auth_google_api_refresh_with_browser.called
 
-    # TODO: testing
     def test_refresh_with_browser_no_credential_file(self, mocker, tmp_path,
                                                      mock_gmail_api_get_google_topic,
                                                      mock_gmail_auth_google_api_execute_request,
@@ -179,6 +178,7 @@ class TestGMailAuth:
                      side_effect=HttpError(resp=test_http_request_resp,
                                            content=bytes("uh oh", "utf-8"),
                                            uri="http://localhost"))
+        # noinspection PyTypeChecker
         test_gmail_auth._google_api_execute_request(test_api_http_request)
         captured = capfd.readouterr()
         assert captured.out == "Error response status code : 403, reason : uh oh\n"
@@ -188,6 +188,7 @@ class TestGMailAuth:
         mock_gmail_auth_google_api_execute_request_http_catch.return_value = "200 Success"
         test_api_http_request = "bogus_url"
         test_gmail_auth = GMailAuth()
+        # noinspection PyTypeChecker
         test_response = test_gmail_auth._google_api_execute_request(test_api_http_request)
         captured = capfd.readouterr()
         assert not captured.out
@@ -459,12 +460,35 @@ class TestGMailApi:
                                "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
                                "\r\nbut so far the new integration has not failed to deliver anything\r\n"
 
-    def test__dissect_message_parts_valid_payload(self, mock_gmail_api_get_message_size,
+    def test__dissect_message_parts_valid_payload(self, capfd, mock_gmail_api_get_message_size,
                                                   mock_google_api_get_whitelist):
         mock_gmail_api_get_message_size.return_value = 250
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         sut = GMailAPI()
         message_text = sut._dissect_message_parts("test_sender@gmail.com", two_part_email.email['payload'])
+        captured = capfd.readouterr()
+        assert captured.out == ('Message Parts:\n'
+                                "[{'body': {'data': "
+                                "'WWVwLCBJJ3ZlIG9ic2VydmVkIHNvbWUgcHJldHR5IGxhcmdlIGVtYWlscyBnb2luZyBiYWNrIGFuZCBmb3J0aC4gSSBkbw0KZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91ZGxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJ2xsIGZvcndhcmQgaXQsDQpidXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGVsaXZlciBhbnl0aGluZw0K',\n"
+                                "           'size': 216},\n"
+                                "  'filename': '',\n"
+                                "  'headers': [{'name': 'Content-Type', 'value': 'text/plain; "
+                                'charset="UTF-8"\'}],\n'
+                                "  'mimeType': 'text/plain',\n"
+                                "  'partId': '0'},\n"
+                                " {'body': {'data': "
+                                "'PGRpdiBkaXI9Imx0ciI-WWVwLCBJJiMzOTt2ZSBvYnNlcnZlZCBzb21lIHByZXR0eSBsYXJnZSBlbWFpbHMgZ29pbmcgYmFjayBhbmQgZm9ydGguIEkgZG8gZG91YmxlLWNoZWNrIGVtYWlscyBpbiBjbG91ZGxvb3Agc28gaWYgc29tZXRoaW5nIGdldHMgbG9zdCBJJiMzOTtsbCBmb3J3YXJkIGl0LCBidXQgc28gZmFyIHRoZSBuZXcgaW50ZWdyYXRpb24gaGFzIG5vdCBmYWlsZWQgdG8gZGVsaXZlciBhbnl0aGluZzwvZGl2Pg0K',\n"
+                                "           'size': 243},\n"
+                                "  'filename': '',\n"
+                                "  'headers': [{'name': 'Content-Type', 'value': 'text/html; "
+                                'charset="UTF-8"\'}],\n'
+                                "  'mimeType': 'text/html',\n"
+                                "  'partId': '1'}]\n"
+                                'Inspecting Message Size\n'
+                                'Max Message Size Allowed: 250\n'
+                                'Current Message Size: 216\n'
+                                'Message From: test_sender@gmail.com\n'
+                                'Valid: Message Under Max Size\n')
         assert message_text == "Yep, I've observed some pretty large emails going back and forth. I " \
                                "do\r\ndouble-check emails in cloudloop so if something gets lost I'll forward it," \
                                "\r\nbut so far the new integration has not failed to deliver anything\r\n"
@@ -740,7 +764,6 @@ class TestGmailAuthFlow:
         gmail_auth_flow(["./gmail_auth_flow.py", "refresh"])
         assert mock_gmail_auth_google_api_refresh_with_browser.called
 
-    # TODO: testing
     def test_gmail_auth_flow_refresh_no_credential_file(self, mocker, tmp_path,
                                                         mock_gmail_api_get_google_topic,
                                                         mock_gmail_auth_google_api_execute_request,
@@ -792,10 +815,10 @@ class TestGmailAuthFlow:
                                 'CAMPHOR_TREE_TOPIC: google pub/sub topic string\n')
 
     def test_gmail_auth_flow_no_option(self, tmp_path, capfd,
-                                            mock_gmail_api_get_google_topic,
-                                            mock_gmail_auth_google_api_execute_request,
-                                            mock_gmail_auth_google_api_refresh_access_token_local,
-                                            mock_gmail_auth_google_api_refresh_with_browser):
+                                       mock_gmail_api_get_google_topic,
+                                       mock_gmail_auth_google_api_execute_request,
+                                       mock_gmail_auth_google_api_refresh_access_token_local,
+                                       mock_gmail_auth_google_api_refresh_with_browser):
         gmail_auth_flow(["./gmail_auth_flow.py"])
         captured = capfd.readouterr()
         assert captured.out == ("Argument 'None' given is not valid\n"
