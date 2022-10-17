@@ -21,6 +21,10 @@ class Config:
     def get_email(message_from: str = None) -> Optional[str]:
         return os.environ.get('CAMPHOR_TREE_EMAIL', message_from)
 
+    # @staticmethod
+    # def get_email_pass() -> str:
+    #     return os.environ.get("CAMPHOR_TREE_EMAIL_PASS", "satsuki")
+
     @staticmethod
     def get_whitelist() -> Optional[Dict[str, str]]:
         # CAMPHOR_TREE_WHITELIST='1,email;2,email;3,email' -> bool

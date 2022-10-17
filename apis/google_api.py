@@ -7,6 +7,7 @@ import base64
 from email.message import EmailMessage
 from typing import Tuple, Optional, Dict, Any, List
 import logging
+# from logging import handlers
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -17,7 +18,34 @@ from requests import Response
 
 from config.config import Config
 
+# smtp_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
+#                                             fromaddr="sv.kiki.vn95@gmail.com",
+#                                             toaddrs="sv.kiki.vn95@gmail.com",
+#                                             subject=u"WARNING: Lost Camphor_Tree Email",
+#                                             credentials=(Config.get_email(), Config.get_email_pass()),
+#                                             secure=())
+#
 _logger = logging.Logger(__name__)
+# _logger.addHandler(smtp_handler)
+
+# import logging
+# import logging.handlers
+#
+# smtp_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
+#                                             fromaddr="sv.kiki.vn95@gmail.com",
+#                                             toaddrs="sv.kiki.vn95@gmail.com",
+#                                             subject=u"WARNING: Lost Camphor_Tree Email",
+#                                             credentials=(EMAIL, PASSWORD),
+#                                             secure=())
+#
+#
+# logger = logging.getLogger()
+# logger.addHandler(smtp_handler)
+#
+# try:
+#   break
+# except Exception as e:
+#   logger.exception('Unhandled Exception')
 
 
 class GMailAuth:
@@ -124,6 +152,9 @@ class GMailAPI(GMailAuth):
             print("Top Inbox GMail Activity Attained")
             return top_message['messages'][0]
 
+    # TODO: change to get_gmail_message_parts
+    # TODO: move google_api_get_message call to get_top_inbox_message
+    # TODO: change message parameter to message_json
     def get_gmail_message_by_id(self, message: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         self._get_creds()
         response_json = self._google_api_get_message(str(message['id']))
@@ -136,6 +167,7 @@ class GMailAPI(GMailAuth):
         print("GMail Message Dissected")
         return None, None, None
 
+    # TODO: move _get_creds to _google_api_send_message
     def send_gmail_message(self):
         """Create and send an email message
         Returns: Message object, including message id
@@ -187,7 +219,11 @@ class GMailAPI(GMailAuth):
 
     def _dissect_message_parts(self, message_from: str, message_payload: Dict[str, Any]) -> Optional[str]:
         message_text = None
+        print("Message Payload:")
+        print(message_payload)
         message_parts = message_payload.get('parts', [message_payload])
+        print("Message Parts:")
+        print(message_parts)
         for message_part in message_parts:
             if 'mimeType' in message_part and message_part['mimeType'] == 'text/plain' \
                     and 'size' in message_part['body'] \

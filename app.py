@@ -15,6 +15,8 @@ def console():
     relay_on = Config.get_relay_switch()
     login_form = LoginForm(request.form)
     email_form = EmailForm(request.form)
+    # TODO: split into multiple endpoints (eg mei, satsuki, cloudloop, email)
+    # TODO: set up server code (boat send, boat view, online relay, onshore send, onshore view) as separate apps?
     if not request.is_json and "submit-password" in request.form and not login_form.validate():
         return render_template('login.html', form=login_form, server_option=server_option)
     if not request.is_json and "submit-password" in request.form and login_form.validate():
