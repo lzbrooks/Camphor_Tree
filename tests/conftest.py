@@ -43,8 +43,8 @@ def mock_relay_email_message_to_cloud_loop(mocker):
 
 
 @pytest.fixture
-def mock_get_latest_gmail_message_text(mocker):
-    return mocker.patch("app.get_latest_gmail_message_text")
+def mock_get_latest_gmail_message_parts(mocker):
+    return mocker.patch("app.get_latest_gmail_message_parts")
 
 
 @pytest.fixture
@@ -87,16 +87,6 @@ def mock_write_gmail_message_to_file(mocker):
 
 
 @pytest.fixture
-def mock_cloud_loop_message_set_up_hex_encoded_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.DecodeCloudLoopMessage.set_up_hex_encoded_message")
-
-
-@pytest.fixture
-def mock_cloud_loop_message_set_up_message_to_hex_encode(mocker):
-    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.set_up_message_to_hex_encode")
-
-
-@pytest.fixture
 def mock_cloud_loop_message_get_max_message_size(mocker):
     return mocker.patch("apis.cloud_loop_api.Config.get_max_message_size")
 
@@ -107,8 +97,28 @@ def mock_cloud_loop_message_get_whitelist(mocker):
 
 
 @pytest.fixture
+def mock_cloud_loop_message_assemble_hex_message_id_local(mocker):
+    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop._assemble_hex_message_id")
+
+
+@pytest.fixture
+def mock_cloud_loop_message_assemble_hex_message_id(mocker):
+    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop._assemble_hex_message_id")
+
+
+@pytest.fixture
 def mock_cloud_loop_message_send_cloud_loop_message(mocker):
     return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.send_cloud_loop_message")
+
+
+@pytest.fixture
+def mock_cloud_loop_message_send_cloud_loop_message_local(mocker):
+    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop.send_cloud_loop_message")
+
+
+@pytest.fixture
+def mock_cloud_loop_message_get_payload(mocker):
+    return mocker.patch("apis.camphor_tree_api.HexEncodeForCloudLoop.get_payload")
 
 
 @pytest.fixture
@@ -123,7 +133,7 @@ def mock_cloud_loop_api_get_rock_block_id(mocker):
 
 @pytest.fixture
 def mock_cloud_loop_api_get_cloud_loop_payload_url(mocker):
-    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop.get_cloud_loop_payload_url")
+    return mocker.patch("apis.cloud_loop_api.HexEncodeForCloudLoop._get_cloud_loop_payload_url")
 
 
 @pytest.fixture
@@ -136,8 +146,13 @@ def mock_cloud_loop_api_requests_get(mocker):
 
 
 @pytest.fixture
-def mock_rock_block_api_set_up_uart(mocker):
-    return mocker.patch("apis.camphor_tree_api.RockBlockAPI.set_up_uart")
+def mock_rock_block_api_serial(mocker):
+    return mocker.patch("apis.rock_block_api.serial.Serial")
+
+
+@pytest.fixture
+def mock_rock_block_api_adafruit_rockblock(mocker):
+    return mocker.patch("apis.rock_block_api.RockBlock")
 
 
 @pytest.fixture
@@ -147,12 +162,22 @@ def mock_rock_block_api_send_data_out(mocker):
 
 @pytest.fixture
 def mock_rock_block_api_get_satellite_transfer(mocker):
-    return mocker.patch("apis.rock_block_api.RockBlockAPI.get_satellite_transfer")
+    return mocker.patch("apis.rock_block_api.RockBlockAPI._get_satellite_transfer")
 
 
 @pytest.fixture
 def mock_rock_block_api_set_data_out(mocker):
-    return mocker.patch("apis.rock_block_api.RockBlockAPI.set_data_out")
+    return mocker.patch("apis.rock_block_api.RockBlockAPI._set_data_out")
+
+
+@pytest.fixture
+def mock_rock_block_api_get_data_in(mocker):
+    return mocker.patch("apis.rock_block_api.RockBlockAPI._get_data_in")
+
+
+@pytest.fixture
+def mock_rock_block_api_assemble_message_file_name(mocker):
+    return mocker.patch("apis.rock_block_api.RockBlockAPI._assemble_message_file_name")
 
 
 @pytest.fixture
@@ -165,53 +190,33 @@ def mock_rock_block_api_time_sleep(mocker):
 
 
 @pytest.fixture
-def mock_gmail_api_set_up_google_client_id(mocker):
+def mock_gmail_api_get_google_client_id(mocker):
     return mocker.patch("apis.google_api.Config.get_google_id")
 
 
 @pytest.fixture
-def mock_gmail_api_set_up_set_up_google_client_secret(mocker):
+def mock_gmail_api_get_google_client_secret(mocker):
     return mocker.patch("apis.google_api.Config.get_google_secret")
 
 
 @pytest.fixture
-def mock_gmail_api_set_up_set_up_refresh_token(mocker):
+def mock_gmail_api_get_refresh_token(mocker):
     return mocker.patch("apis.google_api.Config.get_google_refresh_token")
 
 
 @pytest.fixture
-def mock_gmail_api_set_up_set_up_google_topic(mocker):
+def mock_gmail_api_get_google_topic(mocker):
     return mocker.patch("apis.google_api.Config.get_google_topic")
 
 
 @pytest.fixture
-def mock_gmail_api_set_up_set_up_email(mocker):
+def mock_gmail_api_get_email(mocker):
     return mocker.patch("apis.google_api.Config.get_email")
 
 
 @pytest.fixture
-def mock_gmail_api_set_up_set_up_message_size(mocker):
+def mock_gmail_api_get_message_size(mocker):
     return mocker.patch("apis.google_api.Config.get_max_message_size")
-
-
-@pytest.fixture
-def gmail_get_first_message_from_push(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessageGet.gmail_get_first_message_from_push")
-
-
-@pytest.fixture
-def mock_gmail_api_get_new_gmail_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessageGet.get_new_gmail_message")
-
-
-@pytest.fixture
-def mock_gmail_api_gmail_get_message_by_id(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessageGet.gmail_get_message_by_id")
-
-
-@pytest.fixture
-def mock_gmail_api_get_message_from_gmail_endpoint(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessageGet.get_message_from_gmail_endpoint")
 
 
 @pytest.fixture
@@ -220,18 +225,97 @@ def mock_google_api_get_whitelist(mocker):
 
 
 @pytest.fixture
+def mock_gmail_get_top_inbox_message(mocker):
+    return mocker.patch("apis.camphor_tree_api.GMailAPI.get_top_inbox_message")
+
+
+@pytest.fixture
+def mock_gmail_api_get_gmail_message_by_id(mocker):
+    return mocker.patch("apis.camphor_tree_api.GMailAPI.get_gmail_message_by_id")
+
+
+@pytest.fixture
 def mock_gmail_api_send_gmail_message(mocker):
-    return mocker.patch("apis.camphor_tree_api.GMailMessageSend.send_gmail_message")
+    return mocker.patch("apis.camphor_tree_api.GMailAPI.send_gmail_message")
 
 
 @pytest.fixture
-def mock_google_api_requests_get(mocker):
-    return mocker.patch("apis.google_api.requests.get")
+def mock_gmail_api_get_creds(mocker):
+    return mocker.patch("apis.camphor_tree_api.GMailAPI._get_creds")
 
 
 @pytest.fixture
-def mock_google_api_requests_post(mocker):
-    return mocker.patch("apis.google_api.requests.post")
+def mock_gmail_api_google_api_get_top_inbox_message(mocker):
+    return mocker.patch("apis.camphor_tree_api.GMailAPI._google_api_get_top_inbox_message")
+
+
+@pytest.fixture
+def mock_gmail_api_google_api_send_message(mocker):
+    return mocker.patch("apis.camphor_tree_api.GMailAPI._google_api_send_message")
+
+
+@pytest.fixture
+def mock_gmail_api_google_api_get_message(mocker):
+    return mocker.patch("apis.camphor_tree_api.GMailAPI._google_api_get_message")
+
+
+@pytest.fixture
+def mock_gmail_auth_google_api_refresh_access_token(mocker):
+    return mocker.patch("apis.camphor_tree_api.GMailAPI._google_api_refresh_access_token")
+
+#
+# GMail API Mocks LOCAL
+#
+
+
+@pytest.fixture
+def mock_gmail_api_dissect_message_local(mocker):
+    return mocker.patch("apis.google_api.GMailAPI._dissect_message")
+
+
+@pytest.fixture
+def mock_gmail_api_google_api_execute_request(mocker):
+    return mocker.patch("apis.google_api.GMailAPI._google_api_execute_request")
+
+
+@pytest.fixture
+def mock_gmail_api_google_api_refresh_access_token_local(mocker):
+    return mocker.patch("apis.google_api.GMailAPI._google_api_refresh_access_token")
+
+#
+# GMail Auth Mocks LOCAL
+#
+
+
+@pytest.fixture
+def mock_gmail_api_get_creds_local(mocker):
+    return mocker.patch("apis.google_api.GMailAuth._get_creds")
+
+
+@pytest.fixture
+def mock_gmail_auth_google_api_execute_request(mocker):
+    return mocker.patch("apis.google_api.GMailAuth._google_api_execute_request")
+
+
+@pytest.fixture
+def mock_gmail_auth_google_api_execute_request_http_catch(mocker):
+    return mocker.patch("apis.google_api.GMailAuth._google_api_execute_request_http_catch")
+
+
+@pytest.fixture
+def mock_gmail_auth_google_api_re_watch(mocker):
+    return mocker.patch("apis.google_api.GMailAuth._google_api_re_watch")
+
+
+@pytest.fixture
+def mock_gmail_auth_google_api_refresh_with_browser(mocker):
+    return mocker.patch("apis.google_api.GMailAuth._google_api_refresh_with_browser")
+
+
+@pytest.fixture
+def mock_gmail_auth_google_api_refresh_access_token_local(mocker):
+    return mocker.patch("apis.google_api.GMailAuth._google_api_refresh_access_token")
+
 
 #
 # Other Function Mocks

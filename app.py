@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 
 from apis.camphor_tree_api import relay_email_message_to_cloud_loop, \
-    relay_cloud_loop_message_to_email, send_satellite_message, get_latest_gmail_message_text, message_text_is_new
+    relay_cloud_loop_message_to_email, send_satellite_message, get_latest_gmail_message_parts, message_text_is_new
 from forms.EmailForm import EmailForm
 from forms.LoginForm import LoginForm
 from config.config import Config
@@ -15,6 +15,8 @@ def console():
     relay_on = Config.get_relay_switch()
     login_form = LoginForm(request.form)
     email_form = EmailForm(request.form)
+    # TODO: split into multiple endpoints (eg mei, satsuki, cloudloop, email)
+    # TODO: set up server code (boat send, boat view, online relay, onshore send, onshore view) as separate apps?
     if not request.is_json and "submit-password" in request.form and not login_form.validate():
         return render_template('login.html', form=login_form, server_option=server_option)
     if not request.is_json and "submit-password" in request.form and login_form.validate():
@@ -34,9 +36,9 @@ def console():
         relay_cloud_loop_message_to_email(request.json['data'])
         return "Success", 200
     if request.is_json and "subscription" in request.json and request.json['subscription'] == Config.get_google_sub():
-        new_message_text = get_latest_gmail_message_text()
-        if message_text_is_new(new_message_text) and relay_on:
-            relay_email_message_to_cloud_loop()
+        message_from, message_subject, message_text = get_latest_gmail_message_parts()
+        if message_text_is_new(message_text) and relay_on:
+            relay_email_message_to_cloud_loop(message_from, message_subject, message_text)
         else:
             return "Bounced This One", 200
         return "Success", 200

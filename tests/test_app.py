@@ -129,10 +129,11 @@ class TestAppConsoleFlow:
 
     def test_relay_valid_sub_email_ping(self, client,
                                         mock_get_google_sub,
-                                        mock_get_latest_gmail_message_text,
+                                        mock_get_latest_gmail_message_parts,
                                         mock_message_text_is_new,
                                         mock_relay_email_message_to_cloud_loop):
         mock_get_google_sub.return_value = "test_sub"
+        mock_get_latest_gmail_message_parts.return_value = ("test_sender", "#fbc84a (2/2)", "Testing")
         mock_message_text_is_new.return_value = True
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
@@ -143,11 +144,12 @@ class TestAppConsoleFlow:
 
     def test_relay_valid_sub_email_ping_no_relay(self, client,
                                                  mock_get_google_sub,
-                                                 mock_get_latest_gmail_message_text,
+                                                 mock_get_latest_gmail_message_parts,
                                                  mock_message_text_is_new,
                                                  mock_get_relay_switch,
                                                  mock_relay_email_message_to_cloud_loop):
         mock_get_google_sub.return_value = "test_sub"
+        mock_get_latest_gmail_message_parts.return_value = ("test_sender", "#fbc84a (2/2)", "Testing")
         mock_message_text_is_new.return_value = True
         mock_get_relay_switch.return_value = False
         response = client.post('/', json={"subscription": "test_sub",
@@ -159,10 +161,11 @@ class TestAppConsoleFlow:
 
     def test_bounce_duplicate_sub_email_ping(self, client,
                                              mock_get_google_sub,
-                                             mock_get_latest_gmail_message_text,
+                                             mock_get_latest_gmail_message_parts,
                                              mock_message_text_is_new,
                                              mock_relay_email_message_to_cloud_loop):
         mock_get_google_sub.return_value = "test_sub"
+        mock_get_latest_gmail_message_parts.return_value = ("test_sender", "#fbc84a (2/2)", "Testing")
         mock_message_text_is_new.return_value = False
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
@@ -177,17 +180,19 @@ class TestAppConsoleFlowIntegration:
                                             mock_cloud_loop_api_get_rock_block_id,
                                             mock_cloud_loop_message_get_max_message_size,
                                             mock_cloud_loop_message_get_whitelist,
+                                            mock_cloud_loop_message_assemble_hex_message_id,
                                             mock_cloud_loop_api_get_cloud_loop_payload_url,
                                             mock_cloud_loop_api_requests_get):
         test_hardware_id = "2003"
-        test_payload_string = "satsuki@mocker.com,Info (1/1),Testing"
+        mock_cloud_loop_message_assemble_hex_message_id.return_value = "#fbc84a"
+        test_payload_string = "satsuki@mocker.com,#fbc84a (2/2),Testing"
         test_auth_token = "3"
         test_payload_url = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware=" + test_hardware_id + \
                            "&payload=" + test_payload_string.encode().hex() + \
                            "&token=" + test_auth_token
         mock_cloud_loop_api_get_cloud_loop_auth_token.return_value = test_auth_token
         mock_cloud_loop_api_get_rock_block_id.return_value = test_hardware_id
-        mock_cloud_loop_message_get_max_message_size.return_value = "250"
+        mock_cloud_loop_message_get_max_message_size.return_value = 250
         mock_cloud_loop_api_get_cloud_loop_payload_url.return_value = test_payload_url
 
         response = client.post('/', data={"email": "satsuki@mocker.com",
@@ -214,16 +219,18 @@ class TestAppConsoleFlowIntegration:
                                                          mock_cloud_loop_api_get_rock_block_id,
                                                          mock_cloud_loop_message_get_max_message_size,
                                                          mock_cloud_loop_message_get_whitelist,
+                                                         mock_cloud_loop_message_assemble_hex_message_id,
                                                          mock_cloud_loop_api_requests_get):
         test_hardware_id = "2003"
-        test_payload_string = "satsuki@mocker.com,Info (1/1),Testing"
+        mock_cloud_loop_message_assemble_hex_message_id.return_value = "#fbc84a"
+        test_payload_string = "satsuki@mocker.com,#fbc84a (2/2),Testing"
         test_auth_token = "3"
         test_payload_url = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware=" + test_hardware_id + \
                            "&payload=" + test_payload_string.encode().hex() + \
                            "&token=" + test_auth_token
         mock_cloud_loop_api_get_cloud_loop_auth_token.return_value = test_auth_token
         mock_cloud_loop_api_get_rock_block_id.return_value = test_hardware_id
-        mock_cloud_loop_message_get_max_message_size.return_value = "250"
+        mock_cloud_loop_message_get_max_message_size.return_value = 250
 
         response = client.post('/', data={"email": "satsuki@mocker.com",
                                           "info_level": "Info",
@@ -248,13 +255,16 @@ class TestAppConsoleFlowIntegration:
                                                  mock_cloud_loop_api_get_rock_block_id,
                                                  mock_cloud_loop_message_get_max_message_size,
                                                  mock_cloud_loop_message_get_whitelist,
+                                                 mock_cloud_loop_message_assemble_hex_message_id,
                                                  mock_cloud_loop_api_requests_get):
         test_hardware_id = "2003"
+        mock_cloud_loop_message_assemble_hex_message_id.return_value = "#fbc84a"
         # test_payload_string_one = "satsuki@mocker.com,Info (1/3),Really, So there is no character limit for " \
         #                           "the email address? Really...Hawaii "
         # test_payload_string_two = "satsuki@mocker.com,Info (2/3),to Samoa? Test Person Test Place, Test State, " \
         #                           "12345 test_sender@gmail.com H/O: "
-        test_payload_string_three = "satsuki@mocker.com,Info (3/3), 000-000-0000 Cell: 000-000-0000 -----Original"
+        # 000-000-0000 Cell: 000-000-0000 -----Origin
+        test_payload_string_three = "satsuki@mocker.com,#fbc84a (4/4),al"
         test_auth_token = "3"
         # test_payload_url_one = "https://api.cloudloop.com/DataMt/DoSendMessage?hardware=" + test_hardware_id + \
         #                        "&payload=" + test_payload_string_one.encode().hex() + \
@@ -267,7 +277,7 @@ class TestAppConsoleFlowIntegration:
                                  "&token=" + test_auth_token
         mock_cloud_loop_api_get_cloud_loop_auth_token.return_value = test_auth_token
         mock_cloud_loop_api_get_rock_block_id.return_value = test_hardware_id
-        mock_cloud_loop_message_get_max_message_size.return_value = "100"
+        mock_cloud_loop_message_get_max_message_size.return_value = 100
 
         response = client.post('/', data={"email": "satsuki@mocker.com",
                                           "info_level": "Info",
@@ -292,7 +302,7 @@ class TestAppConsoleFlowIntegration:
         #                                                  headers={'Accept': 'application/json'})
         mock_cloud_loop_api_requests_get.assert_called_with(test_payload_url_three,
                                                             headers={'Accept': 'application/json'})
-        assert mock_cloud_loop_api_requests_get.call_count == 3
+        assert mock_cloud_loop_api_requests_get.call_count == 4
 
         assert response.status_code == 200
         assert b'Satsuki - Camphor Tree' in response.data
@@ -307,10 +317,9 @@ class TestAppConsoleFlowIntegration:
 
     def test_email_page_valid_email_mei_no_serial(self, client,
                                                   mock_get_sister,
-                                                  mock_cloud_loop_message_get_max_message_size,
-                                                  mock_cloud_loop_message_get_whitelist,
+                                                  mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                  mock_cloud_loop_api_get_rock_block_id,
                                                   mock_rock_block_api_get_satellite_transfer):
-        mock_cloud_loop_message_get_max_message_size.return_value = "250"
         mock_get_sister.return_value = 'Mei'
 
         with pytest.raises(SerialException, match=r"could not open port /dev/serial0"):
@@ -318,17 +327,19 @@ class TestAppConsoleFlowIntegration:
                                    "info_level": "Info",
                                    "message_body": "Testing",
                                    "submit-email": "Send Email"})
-        assert mock_cloud_loop_message_get_max_message_size.called
-        assert mock_cloud_loop_message_get_whitelist.called
+        assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert mock_cloud_loop_api_get_rock_block_id.called
+        assert not mock_rock_block_api_get_satellite_transfer.called
 
     def test_email_page_valid_email_mei(self, client,
                                         mock_get_sister,
-                                        mock_rock_block_api_set_up_uart,
+                                        mock_rock_block_api_serial,
+                                        mock_rock_block_api_adafruit_rockblock,
                                         mock_rock_block_api_set_data_out,
                                         mock_cloud_loop_message_get_max_message_size,
                                         mock_cloud_loop_message_get_whitelist,
                                         mock_rock_block_api_get_satellite_transfer):
-        mock_cloud_loop_message_get_max_message_size.return_value = "250"
+        mock_cloud_loop_message_get_max_message_size.return_value = 250
         mock_get_sister.return_value = 'Mei'
         mock_rock_block_api_get_satellite_transfer.return_value = (0,)
 
@@ -382,30 +393,34 @@ class TestAppConsoleFlowIntegration:
     #     assert b'Send Success' in response.data
 
     def test_relay_valid_cloud_loop_message(self, client, mock_get_imei,
-                                            mock_gmail_api_set_up_set_up_message_size,
-                                            mock_google_api_requests_post):
+                                            mock_gmail_api_get_message_size,
+                                            mock_gmail_api_send_gmail_message):
         mock_get_imei.return_value = "2000"
-        test_hex_data = "satsuki@mocker.com,Info (1/1),Testing".encode().hex()
-        mock_gmail_api_set_up_set_up_message_size.return_value = "100"
+        test_hex_data = "satsuki@mocker.com,#fbc84a (1/2),Info".encode().hex()
+        mock_gmail_api_get_message_size.return_value = "100"
         response = client.post('/', json={"imei": "2000", "data": test_hex_data})
-        assert mock_google_api_requests_post.called
+        assert mock_gmail_api_send_gmail_message.called
 
         assert response.status_code == 200
         assert response.data == b'Success'
 
     def test_relay_valid_sub_email_ping_two_parts(self, client,
                                                   mock_get_google_sub,
-                                                  mock_gmail_api_set_up_set_up_message_size,
-                                                  mock_google_api_requests_get,
-                                                  mock_google_api_requests_post,
+                                                  mock_gmail_api_get_creds,
+                                                  mock_gmail_api_get_message_size,
+                                                  mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                  mock_cloud_loop_api_get_rock_block_id,
                                                   mock_cloud_loop_api_requests_get,
-                                                  mock_gmail_api_get_message_from_gmail_endpoint,
-                                                  mock_gmail_api_get_new_gmail_message,
+                                                  mock_gmail_get_top_inbox_message,
+                                                  mock_gmail_api_google_api_get_message,
                                                   mock_write_gmail_message_to_file,
                                                   mock_google_api_get_whitelist):
         mock_get_google_sub.return_value = "test_sub"
-        mock_gmail_api_get_new_gmail_message.return_value = two_part_email.email
-        mock_gmail_api_get_message_from_gmail_endpoint.return_value = two_part_email.email
+        mock_gmail_api_get_message_size.return_value = 250
+        mock_cloud_loop_api_get_cloud_loop_auth_token.return_value = "3"
+        mock_cloud_loop_api_get_rock_block_id.return_value = "2003"
+        mock_gmail_get_top_inbox_message.return_value = two_part_email.email
+        mock_gmail_api_google_api_get_message.return_value = two_part_email.email
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
@@ -416,24 +431,25 @@ class TestAppConsoleFlowIntegration:
 
     def test_bounce_duplicate_sub_email_ping_two_parts(self, client,
                                                        mock_get_google_sub,
-                                                       mock_gmail_api_set_up_set_up_message_size,
-                                                       mock_google_api_requests_get,
-                                                       mock_google_api_requests_post,
+                                                       mock_gmail_api_get_message_size,
                                                        mock_cloud_loop_api_requests_get,
-                                                       mock_gmail_api_get_message_from_gmail_endpoint,
-                                                       mock_gmail_api_get_new_gmail_message,
+                                                       mock_gmail_get_top_inbox_message,
+                                                       mock_gmail_api_get_creds,
+                                                       mock_gmail_api_google_api_get_message,
                                                        mock_write_gmail_message_to_file,
                                                        mock_google_api_get_whitelist,
                                                        mock_read_gmail_message_from_file):
+        duplicate_message_sender = "test_sender@gmail.com"
+        duplicate_message_text = "Yep, I've observed some pretty large emails going back and " \
+                                 "forth. I do\r\ndouble-check emails in cloudloop so if " \
+                                 "something gets lost I'll forward it,\r\nbut so far the new " \
+                                 "integration has not failed to deliver anything\r\n"
         mock_get_google_sub.return_value = "test_sub"
-        mock_gmail_api_set_up_set_up_message_size.return_value = "100"
-        mock_gmail_api_get_new_gmail_message.return_value = two_part_email.email
-        mock_gmail_api_get_message_from_gmail_endpoint.return_value = two_part_email.email
-        mock_read_gmail_message_from_file.return_value = "Yep, I've observed some pretty large emails going back and " \
-                                                         "forth. I do\r\ndouble-check emails in cloudloop so if " \
-                                                         "something gets lost I'll forward it,\r\nbut so far the new " \
-                                                         "integration has not failed to deliver anything\r\n"
-        mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+        mock_gmail_api_get_message_size.return_value = 100
+        mock_gmail_get_top_inbox_message.return_value = two_part_email.email
+        mock_gmail_api_google_api_get_message.return_value = two_part_email.email
+        mock_read_gmail_message_from_file.return_value = duplicate_message_text
+        mock_google_api_get_whitelist.return_value = {"0": duplicate_message_sender}
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
                                               {"data": "test_data"}
@@ -443,17 +459,20 @@ class TestAppConsoleFlowIntegration:
 
     def test_relay_valid_sub_email_ping_no_parts(self, client,
                                                  mock_get_google_sub,
-                                                 mock_gmail_api_set_up_set_up_message_size,
-                                                 mock_google_api_requests_get,
-                                                 mock_google_api_requests_post,
+                                                 mock_gmail_api_get_message_size,
+                                                 mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                 mock_cloud_loop_api_get_rock_block_id,
                                                  mock_cloud_loop_api_requests_get,
-                                                 mock_gmail_api_get_message_from_gmail_endpoint,
-                                                 mock_gmail_api_get_new_gmail_message,
+                                                 mock_gmail_get_top_inbox_message,
+                                                 mock_gmail_api_get_gmail_message_by_id,
                                                  mock_write_gmail_message_to_file,
                                                  mock_google_api_get_whitelist):
         mock_get_google_sub.return_value = "test_sub"
-        mock_gmail_api_get_new_gmail_message.return_value = bob_skipped_email.email
-        mock_gmail_api_get_message_from_gmail_endpoint.return_value = bob_skipped_email.email
+        mock_gmail_api_get_message_size.return_value = 250
+        mock_cloud_loop_api_get_cloud_loop_auth_token.return_value = "3"
+        mock_cloud_loop_api_get_rock_block_id.return_value = "2003"
+        mock_gmail_get_top_inbox_message.return_value = bob_skipped_email.email
+        mock_gmail_api_get_gmail_message_by_id.return_value = ("test_sender@gmail.com", "full_emails", "new_email_text")
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
         response = client.post('/', json={"subscription": "test_sub",
                                           "message":
@@ -464,20 +483,19 @@ class TestAppConsoleFlowIntegration:
 
     def test_bounce_duplicate_sub_email_ping_no_parts(self, client,
                                                       mock_get_google_sub,
-                                                      mock_gmail_api_set_up_set_up_message_size,
-                                                      mock_google_api_requests_get,
-                                                      mock_google_api_requests_post,
+                                                      mock_gmail_api_get_message_size,
                                                       mock_cloud_loop_api_requests_get,
-                                                      mock_gmail_api_get_message_from_gmail_endpoint,
-                                                      mock_gmail_api_get_new_gmail_message,
+                                                      mock_gmail_get_top_inbox_message,
+                                                      mock_gmail_api_get_creds,
+                                                      mock_gmail_api_google_api_get_message,
                                                       mock_write_gmail_message_to_file,
                                                       mock_google_api_get_whitelist,
                                                       mock_read_gmail_message_from_file):
         mock_get_google_sub.return_value = "test_sub"
-        mock_gmail_api_set_up_set_up_message_size.return_value = "100"
+        mock_gmail_api_get_message_size.return_value = 100
         mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
-        mock_gmail_api_get_new_gmail_message.return_value = bob_skipped_email.email
-        mock_gmail_api_get_message_from_gmail_endpoint.return_value = bob_skipped_email.email
+        mock_gmail_get_top_inbox_message.return_value = bob_skipped_email.email
+        mock_gmail_api_google_api_get_message.return_value = bob_skipped_email.email
         mock_read_gmail_message_from_file.return_value = 'Really,\r\n\r\nSo there is no character limit for the sv ' \
                                                          'kiki 95 address?\r\n\r\nReally...Hawaii to ' \
                                                          'Samoa?\r\n\r\nTest Person\r\nTest Place, Test State ' \
@@ -495,3 +513,34 @@ class TestAppConsoleFlowIntegration:
                                           })
         assert response.status_code == 200
         assert response.data == b'Bounced This One'
+
+    # TODO: testing
+    # def test_relay_valid_sub_email_ping(self, client, capfd,
+    #                                     mock_read_gmail_message_from_file,
+    #                                     mock_get_google_sub,
+    #                                     mock_gmail_api_get_message_size,
+    #                                     mock_cloud_loop_api_get_cloud_loop_auth_token,
+    #                                     mock_cloud_loop_api_get_rock_block_id,
+    #                                     mock_cloud_loop_api_requests_get,
+    #                                     mock_gmail_get_top_inbox_message,
+    #                                     mock_gmail_api_get_gmail_message_by_id,
+    #                                     mock_write_gmail_message_to_file,
+    #                                     mock_google_api_get_whitelist):
+    #     mock_read_gmail_message_from_file.return_value = {"last_gmail_message": "Info"}
+    #     mock_get_google_sub.return_value = "test_sub"
+    #     mock_gmail_api_get_message_size.return_value = 250
+    #     mock_cloud_loop_api_get_cloud_loop_auth_token.return_value = "3"
+    #     mock_cloud_loop_api_get_rock_block_id.return_value = "2003"
+    #     mock_gmail_api_get_gmail_message_by_id.return_value = [("test_sender@gmail.com",
+    #                                                             "#fbc84a (1/2)", "Info"),
+    #                                                            ("test_sender@gmail.com",
+    #                                                             "#fbc84a (2/2)", "Testing text")]
+    #     mock_google_api_get_whitelist.return_value = {"0": "test_sender@gmail.com"}
+    #     response = client.post('/', json={"subscription": "test_sub",
+    #                                       "message":
+    #                                           {"data": "test_data"}
+    #                                       })
+    #     captured = capfd.readouterr()
+    #     assert captured.out == ""
+    #     assert response.status_code == 200
+    #     assert response.data == b'Success'

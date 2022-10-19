@@ -4,6 +4,4 @@
 source .env
 
 pip install -r requirements.txt
-cd apis
-python3 rock_block_api.py
-
+python3 mailbox_check.py

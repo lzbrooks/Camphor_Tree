@@ -1,100 +1,75 @@
 import os
+from typing import Optional, List, Dict
 
 
 class Config:
     @staticmethod
-    def get_sister():
-        if 'CAMPHOR_TREE_SIS' in os.environ:
-            return os.environ['CAMPHOR_TREE_SIS']
-        else:
-            return 'Satsuki'
+    def get_sister() -> str:
+        return os.environ.get("CAMPHOR_TREE_SIS", "Satsuki")
 
     @staticmethod
-    def get_pass():
-        if 'CAMPHOR_TREE_PASS' in os.environ:
-            return os.environ['CAMPHOR_TREE_PASS']
-        else:
-            return 'satsuki'
-
-    # TODO: test
-    @staticmethod
-    def get_relay_switch():
-        # CAMPHOR_TREE_RELAY=True
-        # CAMPHOR_TREE_RELAY=False
-        if 'CAMPHOR_TREE_RELAY' in os.environ:
-            return os.environ['CAMPHOR_TREE_RELAY'] == 'True'
-        else:
-            return True
+    def get_pass() -> str:
+        return os.environ.get("CAMPHOR_TREE_PASS", "satsuki")
 
     @staticmethod
-    def get_email(message_from=None):
-        if not message_from:
-            if 'CAMPHOR_TREE_EMAIL' in os.environ:
-                return os.environ['CAMPHOR_TREE_EMAIL']
-        return message_from
+    def get_relay_switch() -> bool:
+        # CAMPHOR_TREE_RELAY='True'
+        # CAMPHOR_TREE_RELAY='False'
+        return os.environ.get("CAMPHOR_TREE_RELAY", "True") == 'True'
 
     @staticmethod
-    def get_whitelist():
-        # CAMPHOR_TREE_WHITELIST=1,email;2,email;3,email
-        if 'CAMPHOR_TREE_WHITELIST' in os.environ:
-            whitelist_emails = os.environ['CAMPHOR_TREE_WHITELIST'].split(";")
-            whitelist = {}
+    def get_email(message_from: str = None) -> Optional[str]:
+        return os.environ.get('CAMPHOR_TREE_EMAIL', message_from)
+
+    # @staticmethod
+    # def get_email_pass() -> str:
+    #     return os.environ.get("CAMPHOR_TREE_EMAIL_PASS", "satsuki")
+
+    @staticmethod
+    def get_whitelist() -> Optional[Dict[str, str]]:
+        # CAMPHOR_TREE_WHITELIST='1,email;2,email;3,email' -> bool
+        # TODO: use a list like collated_massage_parts instead of dict
+        env_whitelist = os.environ.get('CAMPHOR_TREE_WHITELIST')
+        whitelist = {}
+        if env_whitelist:
+            whitelist_emails = env_whitelist.split(";")
             for email in whitelist_emails:
-                email_key = email.split(",")[0]
-                email_val = email.split(",")[1]
+                email_key, email_val = email.split(",")
                 whitelist[email_key] = email_val
-            return whitelist
+        return whitelist
 
     @staticmethod
-    def get_google_secret(google_client_secret=None):
-        if not google_client_secret:
-            if 'CAMPHOR_TREE_SECRET' in os.environ:
-                return os.environ['CAMPHOR_TREE_SECRET']
-        return google_client_secret
+    def get_info_levels() -> List[tuple]:
+        return [('Emergency', 'Emergency'), ('Urgent', 'Urgent'), ('Info', 'Info')]
 
     @staticmethod
-    def get_google_id(google_client_id=None):
-        if not google_client_id:
-            if 'CAMPHOR_TREE_ID' in os.environ:
-                return os.environ['CAMPHOR_TREE_ID']
-        return google_client_id
+    def get_google_client_credentials_file() -> str:
+        return os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "credentials.json")
 
     @staticmethod
-    def get_info_levels():
-        info_levels = [('Emergency', 'Emergency'), ('Urgent', 'Urgent'), ('Info', 'Info')]
-        return info_levels
+    def get_google_access_token_file() -> str:
+        return os.environ.get("CAMPHOR_TREE_ACCESS_TOKEN_FILE", "token.json")
 
     @staticmethod
-    def get_google_refresh_token():
-        if 'CAMPHOR_TREE_REFRESH_TOKEN' in os.environ:
-            return os.environ['CAMPHOR_TREE_REFRESH_TOKEN']
+    def get_cloud_loop_auth_token() -> Optional[str]:
+        return os.environ.get("CAMPHOR_TREE_AUTH_TOKEN")
 
     @staticmethod
-    def get_cloud_loop_auth_token():
-        if 'CAMPHOR_TREE_AUTH_TOKEN' in os.environ:
-            return os.environ['CAMPHOR_TREE_AUTH_TOKEN']
+    def get_imei() -> Optional[str]:
+        return os.environ.get("CAMPHOR_TREE_IMEI")
 
     @staticmethod
-    def get_imei():
-        if 'CAMPHOR_TREE_IMEI' in os.environ:
-            return os.environ['CAMPHOR_TREE_IMEI']
+    def get_rock_block_id() -> Optional[str]:
+        return os.environ.get("CAMPHOR_TREE_HARDWARE_ID")
 
     @staticmethod
-    def get_rock_block_id():
-        if 'CAMPHOR_TREE_HARDWARE_ID' in os.environ:
-            return os.environ['CAMPHOR_TREE_HARDWARE_ID']
+    def get_google_topic() -> Optional[str]:
+        return os.environ.get("CAMPHOR_TREE_TOPIC")
 
     @staticmethod
-    def get_google_topic():
-        if 'CAMPHOR_TREE_TOPIC' in os.environ:
-            return os.environ['CAMPHOR_TREE_TOPIC']
+    def get_google_sub() -> Optional[str]:
+        return os.environ.get("CAMPHOR_TREE_SUB")
 
     @staticmethod
-    def get_google_sub():
-        if 'CAMPHOR_TREE_SUB' in os.environ:
-            return os.environ['CAMPHOR_TREE_SUB']
-
-    @staticmethod
-    def get_max_message_size():
-        if 'CAMPHOR_TREE_MAX_SIZE' in os.environ:
-            return os.environ['CAMPHOR_TREE_MAX_SIZE']
+    def get_max_message_size() -> int:
+        return int(os.environ.get("CAMPHOR_TREE_MAX_SIZE", "250"))

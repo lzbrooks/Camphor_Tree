@@ -1,198 +1,166 @@
-import base64
-import configparser
+from __future__ import print_function
+
+import os.path
+
 import re
-from datetime import datetime, timedelta
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from typing import Tuple
+import base64
+from email.message import EmailMessage
+from pprint import pprint
+from typing import Tuple, Optional, Dict, Any, List
 import logging
+# from logging import handlers
 
-import requests as requests
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from requests import Response
 
-# If modifying these scopes, delete the file token.json.
-# SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
-
-# The file token.json stores the user's access and refresh tokens, and is
-# created automatically when the authorization flow completes for the first
-# time.
-# if os.path.exists('token.json'):
-#     creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-
-# Service endpoint
-# "https://gmail.googleapis.com"
-# Sends the specified message to the recipients in the To, Cc, and Bcc headers.
-# POST
-# "/gmail/v1/users/{userId}/messages/send"
-# POST
-# "/upload/gmail/v1/users/{userId}/messages/send"
-# Get attachments
-# GET
-# "/gmail/v1/users/{userId}/messages/{messageId}/attachments/{id}"
-# Set up or update a push notification watch on the given user mailbox.
-# POST
-# "/gmail/v1/users/{userId}/watch"
 from config.config import Config
 
+# smtp_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
+#                                             fromaddr="sv.kiki.vn95@gmail.com",
+#                                             toaddrs="sv.kiki.vn95@gmail.com",
+#                                             subject=u"WARNING: Lost Camphor_Tree Email",
+#                                             credentials=(Config.get_email(), Config.get_email_pass()),
+#                                             secure=())
+#
 _logger = logging.Logger(__name__)
+# _logger.addHandler(smtp_handler)
+
+# import logging
+# import logging.handlers
+#
+# smtp_handler = logging.handlers.SMTPHandler(mailhost=("smtp.gmail.com", 587),
+#                                             fromaddr="sv.kiki.vn95@gmail.com",
+#                                             toaddrs="sv.kiki.vn95@gmail.com",
+#                                             subject=u"WARNING: Lost Camphor_Tree Email",
+#                                             credentials=(EMAIL, PASSWORD),
+#                                             secure=())
+#
+#
+# logger = logging.getLogger()
+# logger.addHandler(smtp_handler)
+#
+# try:
+#   break
+# except Exception as e:
+#   logger.exception('Unhandled Exception')
 
 
-class GMailMessage:
-    def __init__(self, google_client_id=None, google_client_secret=None):
-        print("GMail Message Processing...")
-        self.google_client_id = Config.get_google_id(google_client_id)
-        self.google_client_secret = Config.get_google_secret(google_client_secret)
+# TODO: refactor class variables into more local ones where applicable
+# TODO: handle possible Nones from Env Vars
+class GMailAuth:
+    creds: Optional[Credentials]
+    cred_file: str
+    token_file: str
+    SCOPES: List[str]
+    google_topic: Optional[str]
 
-        self.refresh_token = Config.get_google_refresh_token()
+    def __init__(self):
+        self.creds = None
+        self.cred_file = Config.get_google_client_credentials_file()
+        self.token_file = Config.get_google_access_token_file()
+        self.SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
+        self.google_topic = Config.get_google_topic()
 
-        self.auth_token = None
-        self.auth_expiry_format = "%m/%d/%Y, %H:%M:%S"
-        print("GMail Message Processed")
-
-    def get_api_headers(self):
-        self.get_auth_token()
-        return {
-            'Authorization': f'Bearer {self.auth_token} ',
-            'Accept': 'application / json',
-            'Content-Type': 'application/json'
+    def re_watch(self) -> None:
+        self._get_creds()
+        request = {
+            'labelIds': ['INBOX'],
+            'labelFilterAction': 'include',
+            'topicName': self.google_topic
         }
-
-    @staticmethod
-    def write_auth_config(request_json, auth_expiry_format):
-        auth_expiry_date_time = datetime.now() + timedelta(seconds=request_json['expires_in'])
-        config_file = configparser.ConfigParser()
-        config_file["AuthConfig"] = {
-            "token": request_json['access_token'],
-            "expires": auth_expiry_date_time.strftime(auth_expiry_format)
-        }
-        with open("configurations.ini", "w") as file_object:
-            config_file.write(file_object)
-
-    @staticmethod
-    def read_auth_config(auth_expiry_format):
-        config_file = configparser.ConfigParser()
-        if config_file.read("configurations.ini"):
-            print("Credentials File Found")
-            config_file.read("configurations.ini")
-            return {
-                "AuthConfig": {
-                    "token": config_file["AuthConfig"]["token"],
-                    "expires": datetime.strptime(config_file["AuthConfig"]["expires"],
-                                                 auth_expiry_format)
-                }
-            }
-        print("Credentials File Not Found")
-
-    def check_auth_token_expired(self):
-        print("Checking GMail Auth Token Expiry...")
-        config_file = self.read_auth_config(self.auth_expiry_format)
-        if config_file and config_file["AuthConfig"]["expires"] > datetime.now():
-            return False
-        print("GMail Auth Token Expired")
-        return True
-
-    def get_auth_token(self):
-        url = "https://oauth2.googleapis.com/token"
-        data = {
-            'client_id': self.google_client_id,
-            'client_secret': self.google_client_secret,
-            'refresh_token': self.refresh_token,
-            'grant_type': 'refresh_token'
-        }
-        if self.check_auth_token_expired():
-            print("Getting New GMail Auth Token...")
-            response = requests.post(url, json=data)
-            if 'access_token' in response.json() and response.json()['access_token']:
-                self.write_auth_config(response.json(), self.auth_expiry_format)
-                self.auth_token = response.json()['access_token']
+        response_json = self._google_api_re_watch(request)
+        if 'historyId' in response_json:
+            print("GMail Re-Watch Success")
         else:
-            auth_config = self.read_auth_config(self.auth_expiry_format)
-            self.auth_token = auth_config["AuthConfig"]["token"]
-        print("GMail Auth Token Attained")
+            print("Gmail Re-Watch Failure")
+
+    def refresh_with_browser(self) -> None:
+        flow = InstalledAppFlow.from_client_secrets_file(
+            self.cred_file, self.SCOPES)
+        self.creds = self._google_api_refresh_with_browser(flow)
+        self._save_creds_to_file()
+
+    # TODO: return creds
+    def _get_creds(self) -> None:
+        """Set self.creds
+        Requires: GOOGLE_APPLICATION_CREDENTIALS env var set to credentials.json file path
+        """
+        if os.path.exists(self.token_file):
+            print("Access Token File Found")
+            self.creds = Credentials.from_authorized_user_file(self.token_file, self.SCOPES)
+        else:
+            print("Access Token File Not Found")
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                print("Getting New GMail Access Token...")
+                self._google_api_refresh_access_token()
+                print("GMail Access Token Attained")
+            else:
+                raise ValueError("No Valid Refresh Token")
+            self._save_creds_to_file()
+
+    def _save_creds_to_file(self) -> None:
+        with open(self.token_file, 'w') as token:
+            token.write(self.creds.to_json())
+        print(f"Token Written To {self.token_file}")
+
+    def _google_api_re_watch(self, request: Dict[str, str]) -> Optional[Response]:
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            re_watch_http_request = service.users().watch(userId='me', body=request)
+            return self._google_api_execute_request(re_watch_http_request)
+
+    @staticmethod
+    def _google_api_refresh_with_browser(flow: InstalledAppFlow) -> Credentials:
+        return flow.run_local_server(port=0)  # pragma: no cover
+
+    def _google_api_refresh_access_token(self) -> None:
+        self.creds.refresh(Request())  # pragma: no cover
+
+    def _google_api_execute_request(self, api_http_request: Request) -> Optional[Dict[str, Any]]:
+        try:
+            return self._google_api_execute_request_http_catch(api_http_request)
+        except HttpError as e:
+            print('Error response status code : {0}, reason : {1}'.format(e.status_code, e.error_details))
+
+    @staticmethod
+    def _google_api_execute_request_http_catch(api_http_request: Request) -> Dict[str, Any]:
+        return api_http_request.execute()  # pragma: no cover
 
 
-class GMailMessageSend(GMailMessage):
-    def __init__(self, google_client_id=None, google_client_secret=None,
-                 message_to=None, message_from=None, message_subject=None, message_text=None):
-        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret)
-        self.message_to = Config.get_email(message_to)
+class GMailAPI(GMailAuth):
+    max_message_size: int
+    message_to: Optional[str]
+    message_from: Optional[str]
+    message_subject: Optional[str]
+    message_text: Optional[str]
+    gmail_message: Optional[Dict[str, Optional[str]]]
+
+    def __init__(self, message_to=None, message_from=None, message_subject=None, message_text=None):
+        GMailAuth.__init__(self)
+        self.max_message_size = Config.get_max_message_size()
+        self.message_to = message_to
         self.message_from = Config.get_email(message_from)
         self.message_subject = message_subject
         self.message_text = message_text
         self.gmail_message = None
-        self.gmail_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
 
-    def gmail_create_message(self):
-        if self.message_to:
-            message = MIMEMultipart()
-            message['To'] = ", ".join(self.message_to)
-            message['From'] = self.message_from
-            message['Subject'] = self.message_subject
-            message.attach(MIMEText(self.message_text, 'plain'))
-            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
-            create_message = {
-                'raw': encoded_message
-            }
-            self.gmail_message = create_message
+    def get_top_inbox_message(self) -> Optional[Dict[str, Any]]:
+        self._get_creds()
+        top_message = self._google_api_get_top_inbox_message()
+        if 'messages' in top_message:
+            print("Top Inbox GMail Activity Attained")
+            return top_message['messages'][0]
 
-    def post_message(self):
-        if self.gmail_message:
-            print("Sending GMail Message")
-            return requests.post(self.gmail_endpoint, headers=self.get_api_headers(), json=self.gmail_message)
-        print("No GMail Message to Send")
-
-    def send_gmail_message(self):
-        self.gmail_create_message()
-        self.post_message()
-
-
-class GMailMessageGet(GMailMessage):
-    def __init__(self, google_client_id=None, google_client_secret=None):
-        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret)
-        self.new_gmail_message = []
-        self.max_message_size = Config.get_max_message_size()
-        self.gmail_message_list_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
-        self.gmail_get_message_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/"
-
-    def get_new_gmail_message(self):
-        return self.new_gmail_message
-
-    def gmail_get_first_message_from_push(self):
-        query_params = {'maxResults': str(1)}
-        response = requests.get(self.gmail_message_list_endpoint, headers=self.get_api_headers(), params=query_params)
-        if 'messages' in response.json():
-            self.new_gmail_message = response.json()['messages'][0]
-
-    def _dissect_message(self, message_payload) -> Tuple[str, str, str]:
-        _logger.info(f"Dissecting message:\n{message_payload}")
-        message_from = None
-        message_subject = None
-        message_text = None
-        for header in message_payload['headers']:
-            if header['name'] == 'From':
-                message_from = re.search(r'(?<=<).*?(?=>)', header['value']).group()
-            if header['name'] == 'Subject':
-                message_subject = header['value']
-        message_parts = message_payload.get('parts', [message_payload])
-        for message_part in message_parts:
-            if 'mimeType' in message_part and message_part['mimeType'] == 'text/plain' \
-                    and 'size' in message_part['body'] \
-                    and 'data' in message_part['body']:
-                size_in_bytes = message_part['body']['size']
-                print("Inspecting Message Size")
-                print("Max Message Size Allowed: " + self.max_message_size)
-                print("Current Message Size: " + str(size_in_bytes))
-                print("Message From: " + message_from)
-                if size_in_bytes < int(self.max_message_size):
-                    message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
-                if size_in_bytes > int(self.max_message_size) \
-                        and message_from in Config.get_whitelist().values():
-                    message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
-        print("GMail Message Dissected")
-        return message_from, message_subject, message_text
-
-    def gmail_get_message_by_id(self, message):
-        get_message_endpoint = self.gmail_get_message_endpoint + str(message['id'])
-        response_json = self.get_message_from_gmail_endpoint(get_message_endpoint)
+    # TODO: change to get_gmail_message_parts
+    # TODO: move google_api_get_message call to get_top_inbox_message
+    # TODO: change message parameter to message_json
+    def get_gmail_message_by_id(self, message: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        self._get_creds()
+        response_json = self._google_api_get_message(str(message['id']))
         print("GMail Message Attained by ID")
         send_message = True
         if 'DRAFT' in response_json['labelIds'] or 'SENT' in response_json['labelIds']:
@@ -202,65 +170,96 @@ class GMailMessageGet(GMailMessage):
         print("GMail Message Dissected")
         return None, None, None
 
-    def get_message_from_gmail_endpoint(self, get_message_endpoint):
-        response = requests.get(get_message_endpoint, headers=self.get_api_headers())
-        return response.json()
+    # TODO: move _get_creds to _google_api_send_message
+    def send_gmail_message(self):
+        """Create and send an email message
+        Returns: Message object, including message id
+        Load pre-authorized user credentials from the environment
+        """
+        self._get_creds()
+        self._create_gmail_message()
+        if self.gmail_message:
+            print("Sending GMail Message")
+            return self._google_api_send_message()
+        print("No GMail Message to Send")
 
+    # TODO: pull out message_to, message_from, message_subject, message_text to parameter (object class?)
+    # TODO: return message_text
+    def _create_gmail_message(self) -> None:
+        if self.message_to and isinstance(self.message_to, list):
+            message = EmailMessage()
+            message['To'] = ", ".join(self.message_to)
+            message['From'] = self.message_from
+            message['Subject'] = self.message_subject
+            message.set_content(self.message_text)
+            encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+            create_message = {
+                'raw': encoded_message
+            }
+            self.gmail_message = create_message
 
-class GMailMessageRefresh(GMailMessage):
-    def __init__(self, google_client_id=None, google_client_secret=None):
-        GMailMessage.__init__(self, google_client_id=google_client_id, google_client_secret=google_client_secret)
-        self.google_topic = Config.get_google_topic()
-        self.watch_endpoint = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
+    def _dissect_message(self, message_payload: Dict[str, Any]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        _logger.info(f"Dissecting message:\n{message_payload}")
+        message_from, message_subject = self._dissect_message_headers(message_payload)
+        message_text = self._dissect_message_parts(message_from, message_payload)
+        print(f"Message Subject: {message_subject}")
+        print(f"Message Body: {message_text}")
+        print("GMail Message Dissected")
+        if not message_text:
+            print("No Message Text Found")
+            print("Possible Parse Failure")
+            print("Check Error Log For Details")
+            _logger.error(f'ERROR: Email Body Not Found: Sender {message_from} Subject {message_subject}')
+        return message_from, message_subject, message_text
 
-    def get_refresh_token(self, auth_code):
-        print("Getting GMail Refresh Token...")
-        url = "https://oauth2.googleapis.com/token"
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-        data = {
-            'code': auth_code,
-            'client_id': self.google_client_id,
-            'client_secret': self.google_client_secret,
-            'redirect_uri': "https://localhost",
-            'grant_type': 'authorization_code'
-        }
-        response = requests.post(url, data=data, headers=headers)
-        print(response.json())
-        self.write_auth_config(response.json(), self.auth_expiry_format)
-        print("GMail Refresh Token Attained")
-        return response.json()['refresh_token']
+    @staticmethod
+    def _dissect_message_headers(message_payload: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
+        message_from = None
+        message_subject = None
+        for header in message_payload['headers']:
+            if header['name'] == 'From':
+                message_from = re.search(r'(?<=<).*?(?=>)', header['value'])
+                if message_from:
+                    message_from = message_from.group()
+            if header['name'] == 'Subject':
+                message_subject = header['value']
+        return message_from, message_subject
 
-    def get_auth_code_url(self):
-        print("Getting GMail Auth Code URL...")
-        scope = "https%3A//www.googleapis.com/auth/gmail.modify"
-        access_type = "offline"
-        response_code = "code"
-        redirect_uri = "https%3A//localhost"
-        authorization_url = "https://accounts.google.com/o/oauth2/auth" + "?" + \
-                            "scope=" + scope + "&" + \
-                            "access_type=" + access_type + "&" + \
-                            "response_type=" + response_code + "&" + \
-                            "redirect_uri=" + redirect_uri + "&" + \
-                            "client_id=" + self.google_client_id
-        print("GMail Auth Code URL Attained")
-        return authorization_url
+    def _dissect_message_parts(self, message_from: str, message_payload: Dict[str, Any]) -> Optional[str]:
+        message_text = None
+        message_parts = message_payload.get('parts', [message_payload])
+        print("Message Parts:")
+        pprint(message_parts)
+        for message_part in message_parts:
+            if 'mimeType' in message_part and message_part['mimeType'] == 'text/plain' \
+                    and 'size' in message_part['body'] \
+                    and 'data' in message_part['body']:
+                size_in_bytes = message_part['body']['size']
+                print("Inspecting Message Size")
+                print(f"Max Message Size Allowed: {self.max_message_size}")
+                print(f"Current Message Size: {size_in_bytes}")
+                print(f"Message From: {message_from}")
+                if size_in_bytes < self.max_message_size:
+                    print("Valid: Message Under Max Size")
+                    message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
+                if size_in_bytes > self.max_message_size \
+                        and message_from in Config.get_whitelist().values():
+                    print("Valid: Message In Whitelist And Over Max Size")
+                    message_text = base64.urlsafe_b64decode(message_part['body']['data']).decode('utf-8')
+        return message_text
 
-    def gmail_re_watch(self):
-        print("Starting GMail Re-Watch...")
-        request_body = {
-            'labelIds': ['INBOX'],
-            'labelFilterAction': 'include',
-            'topicName': self.google_topic
-        }
-        response = requests.post(self.watch_endpoint, headers=self.get_api_headers(), json=request_body)
-        if 'historyId' in response.json():
-            print("GMail Re-Watch Success")
-        else:
-            print("Gmail Re-Watch Failure")
+    def _google_api_get_top_inbox_message(self) -> Dict[str, Any]:
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            top_inbox_http_request = service.users().messages().list(userId='me', maxResults='1')
+            return self._google_api_execute_request(top_inbox_http_request)
 
+    def _google_api_send_message(self) -> Dict[str, Any]:
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            send_message_http_request = service.users().messages().send(userId='me', body=self.gmail_message)
+            return (self._google_api_execute_request(
+                send_message_http_request))
 
-if __name__ == "__main__":
-    gmail_re_watch = GMailMessageRefresh()
-    gmail_re_watch.gmail_re_watch()
+    def _google_api_get_message(self, message_id: str) -> Dict[str, Any]:
+        with build('gmail', 'v1', credentials=self.creds) as service:
+            get_message_http_request = service.users().messages().get(userId='me', id=message_id)
+            return self._google_api_execute_request(get_message_http_request)

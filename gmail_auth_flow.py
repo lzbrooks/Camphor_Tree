@@ -1,37 +1,40 @@
-from flask import Flask, request, redirect
+from __future__ import print_function
 
-from apis.google_api import GMailMessage, GMailMessageRefresh
+import sys
 
-app = Flask(__name__)
-
-
-# TODO: test
-@app.route('/', methods=['GET', 'POST'])
-def console():
-    if request.args and 'code' in request.args:
-        print("")
-        print("...Getting GMail Refresh Token...")
-        auth_code = request.args.get('code')
-        gmail_message = GMailMessageRefresh()
-        refresh_token = gmail_message.get_refresh_token(auth_code)
-        print("")
-        print("Update Heroku Environment Variable CAMPHOR_TREE_REFRESH_TOKEN with value " + refresh_token)
-        print("")
-        print("Please CTRL-C Out of Server")
-        print("")
-        return "Update Heroku Environment Variable CAMPHOR_TREE_REFRESH_TOKEN with value " + refresh_token, 200
-    # TODO: catch when Camphor_Tree/configurations.ini exists but is expired
-    if not GMailMessage().read_auth_config("%m/%d/%Y, %H:%M:%S"):
-        print("")
-        print("...Refreshing GMail Token...")
-        print("Login to Google Account With CAMPHOR_TREE_EMAIL Credentials")
-        gmail_message = GMailMessageRefresh()
-        return redirect(gmail_message.get_auth_code_url())
-    print("")
-    print("Credentials Already Written")
-    print("")
-    return "Credentials Already Written To File", 200
+from apis.google_api import GMailAuth
 
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=443, ssl_context='adhoc')
+def gmail_auth_flow(args):
+    auth_option = get_auth_option(args)
+    gmail_auth = GMailAuth()
+    if auth_option == "re_watch":
+        gmail_auth.re_watch()
+    elif auth_option == "refresh":
+        gmail_auth.refresh_with_browser()
+        print(f"\nUpdate Python Anywhere .env file "
+              f"CAMPHOR_TREE_REFRESH_TOKEN with {gmail_auth.token_file} contents")
+    else:
+        print_help(auth_option)
+
+
+def get_auth_option(args):
+    try:
+        auth_option = args[1]
+    except IndexError:
+        auth_option = None
+    return auth_option
+
+
+def print_help(auth_option):
+    print(f"Argument '{auth_option}' given is not valid")
+    print("Valid arguments are either 're_watch' or 'refresh'")
+    print("\nEnvironment Variables needed are:")
+    print("GOOGLE_APPLICATION_CREDENTIALS: 'credentials.json' client credentials file path")
+    print("CAMPHOR_TREE_ACCESS_TOKEN_FILE: 'token.json' refresh token file path")
+    print("\nre_watch specific environment variable needed is:")
+    print("CAMPHOR_TREE_TOPIC: google pub/sub topic string")
+
+
+if __name__ == "__main__":  # pragma: no cover
+    gmail_auth_flow(sys.argv)

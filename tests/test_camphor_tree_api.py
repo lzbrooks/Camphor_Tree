@@ -1,76 +1,100 @@
 import json
 
-import pytest
-
 from apis.camphor_tree_api import send_satellite_message, relay_email_message_to_cloud_loop, \
-    relay_cloud_loop_message_to_email, get_latest_gmail_message_text, message_text_is_new, \
+    relay_cloud_loop_message_to_email, get_latest_gmail_message_parts, message_text_is_new, \
     read_gmail_message_from_file, save_gmail_message_to_file
 
 
 class TestCamphorTreeApi:
-    def test_send_satellite_message_satsuki(self, mock_cloud_loop_message_set_up_hex_encoded_message,
-                                            mock_cloud_loop_message_set_up_message_to_hex_encode,
+    def test_send_satellite_message_satsuki(self, mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                            mock_cloud_loop_api_get_rock_block_id,
                                             mock_cloud_loop_message_send_cloud_loop_message):
         test_server_option = "Satsuki"
         send_status = send_satellite_message("test_email", "test_info_level", "test_message_body", test_server_option)
-        assert mock_cloud_loop_message_set_up_message_to_hex_encode.called
+        assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert mock_cloud_loop_api_get_rock_block_id.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
         assert send_status == 'Send Success'
 
-    def test_send_satellite_message_mei(self, mock_cloud_loop_message_set_up_hex_encoded_message,
-                                        mock_cloud_loop_message_set_up_message_to_hex_encode,
-                                        mock_rock_block_api_set_up_uart, mock_rock_block_api_send_data_out):
+    def test_send_satellite_message_mei(self, mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                        mock_rock_block_api_serial,
+                                        mock_rock_block_api_adafruit_rockblock,
+                                        mock_cloud_loop_api_get_rock_block_id,
+                                        mock_cloud_loop_message_get_payload,
+                                        mock_rock_block_api_send_data_out):
         test_server_option = "Mei"
         send_status = send_satellite_message("test_email", "test_info_level", "test_message_body", test_server_option)
-        assert mock_rock_block_api_set_up_uart.called
+        assert mock_cloud_loop_message_get_payload.called
         assert mock_rock_block_api_send_data_out.called
         assert send_status == 'Send Success'
 
-    def test_relay_email_message_to_cloud_loop_no_message(self, mock_gmail_api_set_up_set_up_message_size,
-                                                           gmail_get_first_message_from_push,
-                                                           mock_cloud_loop_message_set_up_message_to_hex_encode,
-                                                           mock_cloud_loop_message_send_cloud_loop_message):
-        with pytest.raises(TypeError, match=r"list indices must be integers or slices, not str"):
-            relay_email_message_to_cloud_loop()
-        assert mock_gmail_api_set_up_set_up_message_size.called
-        assert not mock_cloud_loop_message_set_up_message_to_hex_encode.called
-        assert not mock_cloud_loop_message_send_cloud_loop_message.called
+    def test_send_satellite_message_invalid_server_option(self, mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                          mock_cloud_loop_api_get_rock_block_id,
+                                                          mock_cloud_loop_message_get_payload,
+                                                          mock_rock_block_api_send_data_out):
+        test_server_option = "Shichikoyama"
+        send_status = send_satellite_message("test_email", "test_info_level", "test_message_body", test_server_option)
+        assert not mock_cloud_loop_message_get_payload.called
+        assert not mock_rock_block_api_send_data_out.called
+        assert send_status == 'Incorrect Server Mode'
 
-    def test_relay_email_message_to_cloud_loop_one_message(self, mock_gmail_api_set_up_set_up_message_size,
-                                                           gmail_get_first_message_from_push,
-                                                           mock_gmail_api_get_new_gmail_message,
-                                                           mock_gmail_api_gmail_get_message_by_id,
-                                                           mock_cloud_loop_message_set_up_message_to_hex_encode,
-                                                           mock_cloud_loop_message_send_cloud_loop_message):
-        mock_gmail_api_get_new_gmail_message.return_value = "test_message"
-        mock_gmail_api_gmail_get_message_by_id.return_value = ("message_from", "message_subject", "message_text")
+    def test_relay_email_message_to_cloud_loop_no_message(self, capfd,
+                                                          mock_gmail_api_google_api_get_top_inbox_message,
+                                                          mock_gmail_api_google_api_get_message,
+                                                          mock_gmail_api_get_creds,
+                                                          mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                          mock_cloud_loop_api_get_rock_block_id,
+                                                          mock_cloud_loop_api_requests_get):
+        relay_email_message_to_cloud_loop(None, None, None)
+        captured = capfd.readouterr()
+        assert captured.out == 'No CloudLoop Message to Send\nPOST CloudLoop Message Handled\n'
+        assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert mock_cloud_loop_api_get_rock_block_id.called
+        assert not mock_cloud_loop_api_requests_get.called
 
-        relay_email_message_to_cloud_loop()
-        assert mock_gmail_api_set_up_set_up_message_size.called
-        assert mock_cloud_loop_message_set_up_message_to_hex_encode.called
+    def test_relay_email_message_to_cloud_loop_one_message(self, mock_gmail_api_get_message_size,
+                                                           mock_gmail_get_top_inbox_message,
+                                                           mock_gmail_api_get_gmail_message_by_id,
+                                                           mock_cloud_loop_api_get_cloud_loop_auth_token,
+                                                           mock_cloud_loop_api_get_rock_block_id,
+                                                           mock_cloud_loop_message_send_cloud_loop_message):
+        mock_gmail_get_top_inbox_message.return_value = "test_message"
+        relay_email_message_to_cloud_loop("test_sender", "#fbc84a (2/2)", "Testing")
+        assert mock_gmail_api_get_message_size.called
+        assert mock_cloud_loop_api_get_cloud_loop_auth_token.called
+        assert mock_cloud_loop_api_get_rock_block_id.called
         assert mock_cloud_loop_message_send_cloud_loop_message.called
 
-    def test_relay_cloud_loop_message_to_email(self, mock_gmail_api_set_up_set_up_email,
+    def test_relay_cloud_loop_message_to_email(self, capfd, mock_gmail_api_get_email,
                                                mock_gmail_api_send_gmail_message,
-                                               mock_cloud_loop_message_set_up_hex_encoded_message,
-                                               mock_cloud_loop_message_set_up_message_to_hex_encode,
                                                mock_cloud_loop_message_send_cloud_loop_message):
-        relay_cloud_loop_message_to_email("test_request_json_data")
+        mock_gmail_api_get_email.return_value = "test_sender@gmail.com"
+        test_hex_json = "test_sender@gmail.com,#fbc84a (2/2),test request json data".encode().hex()
+        relay_cloud_loop_message_to_email(test_hex_json)
+        captured = capfd.readouterr()
         assert mock_gmail_api_send_gmail_message.called
+        assert captured.out == ('POST CloudLoop Ping Received\n'
+                                'Hex Message Processing...\n'
+                                'Changing Hex to Bytes\n'
+                                "['test_sender@gmail.com']\n"
+                                '#fbc84a (2/2)\n'
+                                'test request json data\n'
+                                'Hex Message Processed\n'
+                                'POST GMail Message Handled\n')
 
-    def test_get_latest_gmail_message_text(self, mock_gmail_api_set_up_set_up_message_size,
-                                           gmail_get_first_message_from_push,
-                                           mock_gmail_api_get_new_gmail_message,
-                                           mock_gmail_api_gmail_get_message_by_id):
-        mock_gmail_api_gmail_get_message_by_id.return_value = "test_message_from", \
+    def test_get_latest_gmail_message_text(self, mock_gmail_api_get_message_size,
+                                           mock_gmail_get_top_inbox_message,
+                                           mock_gmail_api_get_gmail_message_by_id):
+        mock_gmail_api_get_gmail_message_by_id.return_value = "test_message_from", \
                                                               "test_message_subject", \
                                                               "test_message_text"
-        message_text = get_latest_gmail_message_text()
-        assert mock_gmail_api_set_up_set_up_message_size.called
-        assert gmail_get_first_message_from_push.called
-        assert mock_gmail_api_get_new_gmail_message.called
-        assert mock_gmail_api_gmail_get_message_by_id.called
-        assert message_text == "test_message_text"
+        message_from, message_subject, message_text = get_latest_gmail_message_parts()
+        assert mock_gmail_api_get_message_size.called
+        assert mock_gmail_get_top_inbox_message.called
+        assert mock_gmail_api_get_gmail_message_by_id.called
+        assert message_from == 'test_message_from'
+        assert message_subject == 'test_message_subject'
+        assert message_text == 'test_message_text'
 
     def test_message_text_is_new_true(self, mock_read_gmail_message_from_file, mock_save_gmail_message_to_file):
         test_message_text = "test message body"
