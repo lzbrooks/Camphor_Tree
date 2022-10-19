@@ -205,6 +205,11 @@ class GMailAPI(GMailAuth):
         print(f"Message Subject: {message_subject}")
         print(f"Message Body: {message_text}")
         print("GMail Message Dissected")
+        if not message_text:
+            print("No Message Text Found")
+            print("Possible Parse Failure")
+            print("Check Error Log For Details")
+            _logger.error(f'ERROR: Email Body Not Found: Sender {message_from} Subject {message_subject}')
         return message_from, message_subject, message_text
 
     @staticmethod
