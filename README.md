@@ -1,5 +1,15 @@
 # Camphor_Tree
-Pair of flask servers to communicate between RockBLOCK+ and an email server
+A pair of flask servers to communicate between RockBLOCK+ and an email server
+
+The goal of this project is to receive and send emails while underway across the Pacific out of cellphone signal distance on my sailboat without paying for an InReach.  The system works using an inexpensive company-facing Iridium satellite modem (RockBLOCK+) which was IPV8, extremely low power and low latency.  Because the RockBLOCK+ provided Short Burst Data intended for IoT relay, any data I wanted to transmit needed to processed.
+
+To accomplish this the RockBLOCK+ needed to be controlled by the vessel's RaspberryPi single board computer.  I wrote server software that relayed base64 bit encoded emails from the vessel's Pi (Mei) to and from a cloud-based instance (Satsuki).  When I want to retrieve messages I use Mei's LAN website interface, which I made accessible from any browser, like, say, from my phone.  Mei, through the RockBLOCK+, requests all messages from the satellite and unencodes and decompresses all incoming messages. 
+
+- Mei encodes plaintext emails into base64 chunks sized to send from the RockBLOCK+ to the Iridium Satellite Low Orbit Dishes above the Pacific down to a little email server in the UK run by CloudLoop (the company I buy satellite bandwidth from by the kilobyte).  Because satellite bandwidth is expensive, I also compressed each email using a shorthand shared by both onboard and onshore servers before encoding for transmit.
+
+- At the CloudLoop email server I have all arriving messages forwarded to Satsuki.  Once Satsuki gets all the encoded and compressed email chunks, it first strings the chunks back together then unencodes and decompresses the completed emails, and sends them on to the indicated recipients using an email address Satsuki is authorized to use and monitor.  Any emails sent to the email address Satuki monitors are downloaded, chunked, compressed, encoded, and relayed to the CloudLoop email server by Satuki to wait for Mei to request any waiting messages.
+
+Future Work: reconstituting emails from chunks automatically, parsing sent emails of arbitrary length from the RockBLOCK+, and GRIB requests through SailDocs
 
 ## Pair of Sister Servers
 `Satsuki` runs in cloud and handles GMail and CloudLoop API
